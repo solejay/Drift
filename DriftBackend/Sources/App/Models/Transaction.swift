@@ -17,7 +17,7 @@ final class Transaction: Model, Content, @unchecked Sendable {
     var plaidTransactionId: String?
 
     @Field(key: "amount")
-    var amount: Decimal
+    var amount: Double
 
     @Field(key: "date")
     var date: Date
@@ -50,7 +50,7 @@ final class Transaction: Model, Content, @unchecked Sendable {
         accountID: UUID,
         userID: UUID,
         plaidTransactionId: String? = nil,
-        amount: Decimal,
+        amount: Double,
         date: Date,
         merchantName: String,
         category: String,
@@ -95,7 +95,7 @@ struct TransactionDTO: Content {
     let id: UUID
     let accountId: UUID
     let plaidTransactionId: String?
-    let amount: Decimal
+    let amount: Double
     let date: Date
     let merchantName: String
     let category: String

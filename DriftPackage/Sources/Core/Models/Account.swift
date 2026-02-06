@@ -86,6 +86,7 @@ public struct Account: Identifiable, Codable, Sendable, Hashable {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = "USD"
+        formatter.currencySymbol = "$"
         return formatter.string(from: balance as NSDecimalNumber)
     }
 }

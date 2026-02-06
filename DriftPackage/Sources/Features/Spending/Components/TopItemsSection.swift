@@ -86,6 +86,7 @@ public struct TopSpendingItemRow: View {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = "USD"
+        formatter.currencySymbol = "$"
         return formatter.string(from: amount as NSDecimalNumber) ?? "$0"
     }
 }

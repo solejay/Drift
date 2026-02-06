@@ -13,8 +13,8 @@ struct SummaryController: RouteCollection {
 
     struct DailySummaryResponse: Content {
         let date: Date
-        let totalSpent: Decimal
-        let totalIncome: Decimal
+        let totalSpent: Double
+        let totalIncome: Double
         let transactionCount: Int
         let categoryBreakdown: [CategoryBreakdownDTO]
         let topTransactions: [TransactionDTO]
@@ -24,7 +24,7 @@ struct SummaryController: RouteCollection {
     struct CategoryBreakdownDTO: Content {
         let id: UUID
         let category: String
-        let amount: Decimal
+        let amount: Double
         let transactionCount: Int
         let percentageOfTotal: Double
     }
@@ -62,7 +62,7 @@ struct SummaryController: RouteCollection {
                 category: category,
                 amount: amount,
                 transactionCount: txns.count,
-                percentageOfTotal: totalSpent > 0 ? Double(truncating: amount as NSDecimalNumber) / Double(truncating: totalSpent as NSDecimalNumber) : 0
+                percentageOfTotal: totalSpent > 0 ? amount / totalSpent : 0
             )
         }.sorted { $0.amount > $1.amount }
 
@@ -86,7 +86,7 @@ struct SummaryController: RouteCollection {
 
         var comparison: Double? = nil
         if yesterdaySpent > 0 {
-            comparison = (Double(truncating: totalSpent as NSDecimalNumber) - Double(truncating: yesterdaySpent as NSDecimalNumber)) / Double(truncating: yesterdaySpent as NSDecimalNumber)
+            comparison = (totalSpent - yesterdaySpent) / yesterdaySpent
         }
 
         return DailySummaryResponse(
@@ -105,8 +105,8 @@ struct SummaryController: RouteCollection {
     struct WeeklySummaryResponse: Content {
         let weekStartDate: Date
         let weekEndDate: Date
-        let totalSpent: Decimal
-        let totalIncome: Decimal
+        let totalSpent: Double
+        let totalIncome: Double
         let transactionCount: Int
         let categoryBreakdown: [CategoryBreakdownDTO]
         let dailySpending: [DailySpendingDTO]
@@ -117,14 +117,14 @@ struct SummaryController: RouteCollection {
     struct DailySpendingDTO: Content {
         let id: UUID
         let date: Date
-        let amount: Decimal
+        let amount: Double
         let transactionCount: Int
     }
 
     struct MerchantBreakdownDTO: Content {
         let id: UUID
         let merchantName: String
-        let amount: Decimal
+        let amount: Double
         let transactionCount: Int
         let category: String
     }
@@ -161,7 +161,7 @@ struct SummaryController: RouteCollection {
                 category: category,
                 amount: amount,
                 transactionCount: txns.count,
-                percentageOfTotal: totalSpent > 0 ? Double(truncating: amount as NSDecimalNumber) / Double(truncating: totalSpent as NSDecimalNumber) : 0
+                percentageOfTotal: totalSpent > 0 ? amount / totalSpent : 0
             )
         }.sorted { $0.amount > $1.amount }
 
@@ -208,7 +208,7 @@ struct SummaryController: RouteCollection {
 
         var comparison: Double? = nil
         if lastWeekSpent > 0 {
-            comparison = (Double(truncating: totalSpent as NSDecimalNumber) - Double(truncating: lastWeekSpent as NSDecimalNumber)) / Double(truncating: lastWeekSpent as NSDecimalNumber)
+            comparison = (totalSpent - lastWeekSpent) / lastWeekSpent
         }
 
         return WeeklySummaryResponse(
@@ -229,8 +229,8 @@ struct SummaryController: RouteCollection {
     struct MonthlySummaryResponse: Content {
         let month: Int
         let year: Int
-        let totalSpent: Decimal
-        let totalIncome: Decimal
+        let totalSpent: Double
+        let totalIncome: Double
         let transactionCount: Int
         let categoryBreakdown: [CategoryBreakdownDTO]
         let weeklySpending: [WeeklySpendingDTO]
@@ -244,7 +244,7 @@ struct SummaryController: RouteCollection {
         let weekNumber: Int
         let startDate: Date
         let endDate: Date
-        let amount: Decimal
+        let amount: Double
         let transactionCount: Int
     }
 
@@ -287,7 +287,7 @@ struct SummaryController: RouteCollection {
                 category: category,
                 amount: amount,
                 transactionCount: txns.count,
-                percentageOfTotal: totalSpent > 0 ? Double(truncating: amount as NSDecimalNumber) / Double(truncating: totalSpent as NSDecimalNumber) : 0
+                percentageOfTotal: totalSpent > 0 ? amount / totalSpent : 0
             )
         }.sorted { $0.amount > $1.amount }
 
@@ -357,7 +357,7 @@ struct SummaryController: RouteCollection {
 
         var comparison: Double? = nil
         if lastMonthSpent > 0 {
-            comparison = (Double(truncating: totalSpent as NSDecimalNumber) - Double(truncating: lastMonthSpent as NSDecimalNumber)) / Double(truncating: lastMonthSpent as NSDecimalNumber)
+            comparison = (totalSpent - lastMonthSpent) / lastMonthSpent
         }
 
         return MonthlySummaryResponse(

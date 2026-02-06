@@ -97,6 +97,7 @@ public struct SpendingRing: View {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = "USD"
+        formatter.currencySymbol = "$"
         formatter.maximumFractionDigits = 0
         return formatter.string(from: total as NSDecimalNumber) ?? "$0"
     }

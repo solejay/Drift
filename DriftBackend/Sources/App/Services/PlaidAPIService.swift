@@ -37,30 +37,30 @@ actor PlaidAPIService {
 
     func createLinkToken(userId: UUID) async throws -> String {
         struct Request: Content {
-            let client_id: String
+            let clientId: String
             let secret: String
             let user: UserInfo
-            let client_name: String
+            let clientName: String
             let products: [String]
-            let country_codes: [String]
+            let countryCodes: [String]
             let language: String
 
             struct UserInfo: Content {
-                let client_user_id: String
+                let clientUserId: String
             }
         }
 
         struct Response: Content {
-            let link_token: String
+            let linkToken: String
         }
 
         let request = Request(
-            client_id: clientId,
+            clientId: clientId,
             secret: secret,
-            user: .init(client_user_id: userId.uuidString),
-            client_name: "Drift",
+            user: .init(clientUserId: userId.uuidString),
+            clientName: "Drift",
             products: ["transactions"],
-            country_codes: ["US"],
+            countryCodes: ["US"],
             language: "en"
         )
 
@@ -70,7 +70,7 @@ actor PlaidAPIService {
         }
 
         let result = try response.content.decode(Response.self)
-        return result.link_token
+        return result.linkToken
     }
 
     // MARK: - Exchange Token
@@ -82,20 +82,20 @@ actor PlaidAPIService {
 
     func exchangePublicToken(_ publicToken: String) async throws -> ExchangeResult {
         struct Request: Content {
-            let client_id: String
+            let clientId: String
             let secret: String
-            let public_token: String
+            let publicToken: String
         }
 
         struct Response: Content {
-            let access_token: String
-            let item_id: String
+            let accessToken: String
+            let itemId: String
         }
 
         let request = Request(
-            client_id: clientId,
+            clientId: clientId,
             secret: secret,
-            public_token: publicToken
+            publicToken: publicToken
         )
 
         let response = try await client.post(URI(string: "\(environment.baseURL)/item/public_token/exchange")) { req in
@@ -104,15 +104,15 @@ actor PlaidAPIService {
         }
 
         let result = try response.content.decode(Response.self)
-        return ExchangeResult(accessToken: result.access_token, itemId: result.item_id)
+        return ExchangeResult(accessToken: result.accessToken, itemId: result.itemId)
     }
 
     // MARK: - Get Accounts
 
     struct PlaidAccount: Content {
-        let account_id: String
+        let accountId: String
         let name: String
-        let official_name: String?
+        let officialName: String?
         let type: String
         let subtype: String?
         let mask: String?
@@ -126,9 +126,9 @@ actor PlaidAPIService {
 
     func getAccounts(accessToken: String) async throws -> [PlaidAccount] {
         struct Request: Content {
-            let client_id: String
+            let clientId: String
             let secret: String
-            let access_token: String
+            let accessToken: String
         }
 
         struct Response: Content {
@@ -136,9 +136,9 @@ actor PlaidAPIService {
         }
 
         let request = Request(
-            client_id: clientId,
+            clientId: clientId,
             secret: secret,
-            access_token: accessToken
+            accessToken: accessToken
         )
 
         let response = try await client.post(URI(string: "\(environment.baseURL)/accounts/get")) { req in
@@ -161,11 +161,11 @@ actor PlaidAPIService {
     }
 
     struct PlaidTransaction: Content {
-        let transaction_id: String
-        let account_id: String
+        let transactionId: String
+        let accountId: String
         let amount: Double
         let date: String
-        let merchant_name: String?
+        let merchantName: String?
         let name: String
         let category: [String]?
         let pending: Bool
@@ -173,9 +173,9 @@ actor PlaidAPIService {
 
     func syncTransactions(accessToken: String, cursor: String?) async throws -> TransactionSyncResult {
         struct Request: Content {
-            let client_id: String
+            let clientId: String
             let secret: String
-            let access_token: String
+            let accessToken: String
             let cursor: String?
         }
 
@@ -183,18 +183,18 @@ actor PlaidAPIService {
             let added: [PlaidTransaction]
             let modified: [PlaidTransaction]
             let removed: [RemovedTransaction]
-            let next_cursor: String
-            let has_more: Bool
+            let nextCursor: String
+            let hasMore: Bool
 
             struct RemovedTransaction: Content {
-                let transaction_id: String
+                let transactionId: String
             }
         }
 
         let request = Request(
-            client_id: clientId,
+            clientId: clientId,
             secret: secret,
-            access_token: accessToken,
+            accessToken: accessToken,
             cursor: cursor
         )
 
@@ -208,25 +208,25 @@ actor PlaidAPIService {
         return TransactionSyncResult(
             added: result.added,
             modified: result.modified,
-            removed: result.removed.map(\.transaction_id),
-            nextCursor: result.next_cursor,
-            hasMore: result.has_more
+            removed: result.removed.map(\.transactionId),
+            nextCursor: result.nextCursor,
+            hasMore: result.hasMore
         )
     }
 
     // MARK: - Get Institution
 
     struct PlaidInstitution: Content {
-        let institution_id: String
+        let institutionId: String
         let name: String
     }
 
     func getInstitution(institutionId: String) async throws -> PlaidInstitution {
         struct Request: Content {
-            let client_id: String
+            let clientId: String
             let secret: String
-            let institution_id: String
-            let country_codes: [String]
+            let institutionId: String
+            let countryCodes: [String]
         }
 
         struct Response: Content {
@@ -234,10 +234,10 @@ actor PlaidAPIService {
         }
 
         let request = Request(
-            client_id: clientId,
+            clientId: clientId,
             secret: secret,
-            institution_id: institutionId,
-            country_codes: ["US"]
+            institutionId: institutionId,
+            countryCodes: ["US"]
         )
 
         let response = try await client.post(URI(string: "\(environment.baseURL)/institutions/get_by_id")) { req in

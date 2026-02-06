@@ -119,14 +119,14 @@ struct PlaidController: RouteCollection {
             let account = Account(
                 plaidItemID: plaidItemId,
                 userID: userId,
-                plaidAccountId: plaidAccount.account_id,
+                plaidAccountId: plaidAccount.accountId,
                 name: plaidAccount.name,
-                officialName: plaidAccount.official_name,
+                officialName: plaidAccount.officialName,
                 type: plaidAccount.type,
                 subtype: plaidAccount.subtype,
                 mask: plaidAccount.mask,
-                currentBalance: plaidAccount.balances.current.map { Decimal($0) },
-                availableBalance: plaidAccount.balances.available.map { Decimal($0) }
+                currentBalance: plaidAccount.balances.current,
+                availableBalance: plaidAccount.balances.available
             )
             try await account.save(on: req.db)
             accountDTOs.append(account.toDTO())
@@ -191,17 +191,17 @@ struct PlaidController: RouteCollection {
 
             // Process added transactions
             for plaidTxn in result.added {
-                guard let account = accountMap[plaidTxn.account_id] else { continue }
+                guard let account = accountMap[plaidTxn.accountId] else { continue }
 
                 guard let accountId = account.id else { continue }
 
                 let transaction = Transaction(
                     accountID: accountId,
                     userID: item.$user.id,
-                    plaidTransactionId: plaidTxn.transaction_id,
-                    amount: Decimal(plaidTxn.amount),
+                    plaidTransactionId: plaidTxn.transactionId,
+                    amount: plaidTxn.amount,
                     date: parseDate(plaidTxn.date) ?? Date(),
-                    merchantName: plaidTxn.merchant_name ?? plaidTxn.name,
+                    merchantName: plaidTxn.merchantName ?? plaidTxn.name,
                     category: plaidTxn.category?.first ?? "other",
                     isPending: plaidTxn.pending
                 )
@@ -212,12 +212,12 @@ struct PlaidController: RouteCollection {
             // Process modified transactions
             for plaidTxn in result.modified {
                 guard let existing = try await Transaction.query(on: req.db)
-                    .filter(\.$plaidTransactionId == plaidTxn.transaction_id)
+                    .filter(\.$plaidTransactionId == plaidTxn.transactionId)
                     .first() else { continue }
 
-                existing.amount = Decimal(plaidTxn.amount)
+                existing.amount = plaidTxn.amount
                 existing.date = parseDate(plaidTxn.date) ?? existing.date
-                existing.merchantName = plaidTxn.merchant_name ?? plaidTxn.name
+                existing.merchantName = plaidTxn.merchantName ?? plaidTxn.name
                 existing.category = plaidTxn.category?.first ?? existing.category
                 existing.isPending = plaidTxn.pending
 

@@ -53,5 +53,6 @@ final class PlaidItem: Model, Content, @unchecked Sendable {
         self.accessToken = accessToken
         self.institutionId = institutionId
         self.institutionName = institutionName
+        self.cursor = nil
     }
 }

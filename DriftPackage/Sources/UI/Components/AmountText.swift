@@ -57,6 +57,7 @@ public struct AmountText: View {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = "USD"
+        formatter.currencySymbol = "$"
 
         if compact {
             return compactFormat
@@ -85,6 +86,7 @@ public struct AmountText: View {
             let formatter = NumberFormatter()
             formatter.numberStyle = .currency
             formatter.currencyCode = "USD"
+            formatter.currencySymbol = "$"
             let base = formatter.string(from: absValue as NSDecimalNumber) ?? "$0"
             return amount < 0 ? "-\(base)" : (showSign && amount > 0 ? "+\(base)" : base)
         }

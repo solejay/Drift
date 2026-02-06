@@ -26,6 +26,7 @@ public struct CategorySpending: Identifiable, Codable, Sendable, Hashable {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = "USD"
+        formatter.currencySymbol = "$"
         return formatter.string(from: amount as NSDecimalNumber) ?? "$0"
     }
 
@@ -90,6 +91,7 @@ public struct SpendingSummary: Identifiable, Codable, Sendable {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = "USD"
+        formatter.currencySymbol = "$"
         return formatter.string(from: totalSpent as NSDecimalNumber) ?? "$0"
     }
 
@@ -97,6 +99,7 @@ public struct SpendingSummary: Identifiable, Codable, Sendable {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = "USD"
+        formatter.currencySymbol = "$"
         return formatter.string(from: totalIncome as NSDecimalNumber) ?? "$0"
     }
 
@@ -108,6 +111,7 @@ public struct SpendingSummary: Identifiable, Codable, Sendable {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = "USD"
+        formatter.currencySymbol = "$"
         return formatter.string(from: netAmount as NSDecimalNumber) ?? "$0"
     }
 
@@ -150,6 +154,7 @@ public struct MerchantSpending: Identifiable, Codable, Sendable, Hashable {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = "USD"
+        formatter.currencySymbol = "$"
         return formatter.string(from: amount as NSDecimalNumber) ?? "$0"
     }
 }

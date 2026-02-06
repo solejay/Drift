@@ -36,6 +36,7 @@ public final class LeakyBucketsViewModel: ObservableObject {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = "USD"
+        formatter.currencySymbol = "$"
         formatter.maximumFractionDigits = 0
         return formatter.string(from: totalMonthlyImpact as NSDecimalNumber) ?? "$0"
     }
@@ -44,6 +45,7 @@ public final class LeakyBucketsViewModel: ObservableObject {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = "USD"
+        formatter.currencySymbol = "$"
         formatter.maximumFractionDigits = 0
         return formatter.string(from: totalYearlyImpact as NSDecimalNumber) ?? "$0"
     }

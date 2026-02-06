@@ -32,10 +32,10 @@ final class Account: Model, Content, @unchecked Sendable {
     var mask: String?
 
     @Field(key: "current_balance")
-    var currentBalance: Decimal?
+    var currentBalance: Double?
 
     @Field(key: "available_balance")
-    var availableBalance: Decimal?
+    var availableBalance: Double?
 
     @Field(key: "is_hidden")
     var isHidden: Bool
@@ -61,8 +61,8 @@ final class Account: Model, Content, @unchecked Sendable {
         type: String,
         subtype: String? = nil,
         mask: String? = nil,
-        currentBalance: Decimal? = nil,
-        availableBalance: Decimal? = nil
+        currentBalance: Double? = nil,
+        availableBalance: Double? = nil
     ) {
         self.id = id
         self.$plaidItem.id = plaidItemID
@@ -105,8 +105,8 @@ struct AccountDTO: Content {
     let officialName: String?
     let type: String
     let mask: String?
-    let currentBalance: Decimal?
-    let availableBalance: Decimal?
+    let currentBalance: Double?
+    let availableBalance: Double?
     let institutionName: String?
     let isHidden: Bool
 }

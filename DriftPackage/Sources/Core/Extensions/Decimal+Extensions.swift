@@ -6,6 +6,7 @@ public extension Decimal {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = "USD"
+        formatter.currencySymbol = "$"
         return formatter.string(from: self as NSDecimalNumber) ?? "$0.00"
     }
 
