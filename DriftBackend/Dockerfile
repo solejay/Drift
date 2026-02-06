@@ -10,7 +10,7 @@ RUN swift package resolve
 
 # Copy source and build
 COPY Sources Sources
-RUN swift build -c release --static-swift-stdlib
+RUN swift build -c release --static-swift-stdlib --target App
 
 # Runtime stage
 FROM ubuntu:22.04
