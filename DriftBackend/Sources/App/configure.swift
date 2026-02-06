@@ -46,10 +46,8 @@ func configure(_ app: Application) async throws {
     app.migrations.add(CreateUserPreference())
     app.migrations.add(CreateDeviceToken())
 
-    // Run migrations in development
-    if app.environment == .development {
-        try await app.autoMigrate()
-    }
+    // Run migrations automatically
+    try await app.autoMigrate()
 
     // MARK: - Middleware
     // CORS: Restrict origins in production, allow all in development

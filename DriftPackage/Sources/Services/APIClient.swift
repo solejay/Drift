@@ -16,10 +16,14 @@ public actor APIClient {
     private var pendingRequests: [CheckedContinuation<Void, Error>] = []
 
     public init(
-        baseURL: URL = URL(string: "http://localhost:8080")!,
+        baseURL: URL? = nil,
         session: URLSession = .shared
     ) {
-        self.baseURL = baseURL
+        #if targetEnvironment(simulator)
+        self.baseURL = baseURL ?? URL(string: "http://localhost:8080")!
+        #else
+        self.baseURL = baseURL ?? URL(string: "https://drift-backend.onrender.com")!
+        #endif
         self.session = session
 
         self.decoder = JSONDecoder()
