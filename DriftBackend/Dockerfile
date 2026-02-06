@@ -4,7 +4,8 @@ FROM swift:5.9-jammy as builder
 WORKDIR /app
 
 # Copy package files first for better caching
-COPY Package.swift Package.resolved ./
+COPY Package.swift ./
+COPY Package.resolved* ./
 RUN swift package resolve
 
 # Copy source and build
