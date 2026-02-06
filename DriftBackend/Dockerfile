@@ -10,6 +10,7 @@ RUN swift package resolve
 
 # Copy source and build
 COPY Sources Sources
+RUN mkdir -p Tests/AppTests
 RUN swift build -c release --static-swift-stdlib --target App
 
 # Runtime stage
