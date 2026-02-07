@@ -40,7 +40,8 @@ extension Application {
 
     func generateRefreshToken() -> String {
         // Generate a random 256-bit token
-        let bytes = [UInt8].random(count: 32)
+        var bytes = [UInt8](repeating: 0, count: 32)
+        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
         return Data(bytes).base64EncodedString()
     }
 }

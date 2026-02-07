@@ -4,14 +4,12 @@ FROM swift:5.9-jammy as builder
 WORKDIR /app
 
 # Copy package files first for better caching
-COPY Package.swift ./
-COPY Package.resolved* ./
+COPY Package.swift Package.resolved ./
 RUN swift package resolve
 
 # Copy source and build
 COPY Sources Sources
-RUN mkdir -p Tests/AppTests
-RUN swift build -c release --static-swift-stdlib --target App
+RUN swift build -c release --static-swift-stdlib
 
 # Runtime stage
 FROM ubuntu:22.04

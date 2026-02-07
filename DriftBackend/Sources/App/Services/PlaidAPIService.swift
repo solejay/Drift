@@ -44,6 +44,7 @@ actor PlaidAPIService {
             let products: [String]
             let countryCodes: [String]
             let language: String
+            let redirectUri: String?
 
             struct UserInfo: Content {
                 let clientUserId: String
@@ -54,6 +55,8 @@ actor PlaidAPIService {
             let linkToken: String
         }
 
+        let redirectUri = Environment.get("PLAID_REDIRECT_URI")
+
         let request = Request(
             clientId: clientId,
             secret: secret,
@@ -61,7 +64,8 @@ actor PlaidAPIService {
             clientName: "Drift",
             products: ["transactions"],
             countryCodes: ["US"],
-            language: "en"
+            language: "en",
+            redirectUri: redirectUri
         )
 
         let response = try await client.post(URI(string: "\(environment.baseURL)/link/token/create")) { req in

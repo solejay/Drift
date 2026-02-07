@@ -22,7 +22,7 @@ public actor APIClient {
         #if targetEnvironment(simulator)
         self.baseURL = baseURL ?? URL(string: "http://localhost:8080")!
         #else
-        self.baseURL = baseURL ?? URL(string: "https://drift-backend.onrender.com")!
+        self.baseURL = baseURL ?? URL(string: "http://10.0.0.86:8080")!
         #endif
         self.session = session
 
