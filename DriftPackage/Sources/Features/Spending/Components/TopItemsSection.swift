@@ -55,7 +55,7 @@ public struct TopSpendingItemRow: View {
     public var body: some View {
         GlassCard(padding: DesignTokens.Spacing.sm) {
             HStack(spacing: DesignTokens.Spacing.md) {
-                CategoryIconFromString(category: item.category, size: .small)
+                MerchantLogoView(logoUrl: item.logoUrl, category: item.category, size: .small)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.name)

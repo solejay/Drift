@@ -34,7 +34,7 @@ public struct LeakyBucketCard: View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
             // Header: Icon + Merchant name + Frequency
             HStack {
-                CategoryIcon(category: bucket.category, size: .medium)
+                MerchantLogoCategoryView(logoUrl: bucket.logoUrl, category: bucket.category, size: .medium)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(bucket.merchantName)

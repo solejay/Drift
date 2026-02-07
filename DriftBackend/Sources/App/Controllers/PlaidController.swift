@@ -7,6 +7,7 @@ struct PlaidController: RouteCollection {
         plaid.post("link-token", use: createLinkToken)
         plaid.post("exchange", use: exchangeToken)
         plaid.post("sync", use: syncTransactions)
+        plaid.post("enrich", use: enrichTransactions)
     }
 
     // MARK: - Webhook (registered separately as unprotected route)
@@ -168,6 +169,75 @@ struct PlaidController: RouteCollection {
         return SyncResponse(added: totalAdded, modified: totalModified, removed: totalRemoved)
     }
 
+    // MARK: - Enrich Transactions
+
+    struct EnrichResponse: Content {
+        let enriched: Int
+    }
+
+    func enrichTransactions(req: Request) async throws -> EnrichResponse {
+        let userId = try req.userId
+        let plaidService = PlaidAPIService(client: req.client)
+
+        // Fetch unenriched transactions for the user
+        let unenriched = try await Transaction.query(on: req.db)
+            .filter(\.$user.$id == userId)
+            .filter(\.$pfcPrimary == nil)
+            .all()
+
+        guard !unenriched.isEmpty else {
+            return EnrichResponse(enriched: 0)
+        }
+
+        var totalEnriched = 0
+
+        // Batch in groups of 100 (Plaid limit)
+        for batch in unenriched.chunked(into: 100) {
+            let enrichRequests = batch.map { txn in
+                PlaidAPIService.EnrichRequest.EnrichTransaction(
+                    id: txn.plaidTransactionId ?? txn.id!.uuidString,
+                    description: txn.transactionDescription ?? txn.merchantName,
+                    amount: abs(txn.amount),
+                    direction: txn.amount < 0 ? "INFLOW" : "OUTFLOW",
+                    isoCurrencyCode: "CAD"
+                )
+            }
+
+            let enriched = try await plaidService.enrichTransactions(enrichRequests, accountType: "depository")
+
+            // Build lookup by ID
+            let enrichedMap = Dictionary(uniqueKeysWithValues: enriched.map { ($0.id, $0.enrichments) })
+
+            for txn in batch {
+                let lookupId = txn.plaidTransactionId ?? txn.id!.uuidString
+                guard let enrichments = enrichedMap[lookupId] else { continue }
+
+                txn.pfcPrimary = enrichments.personalFinanceCategory?.primary
+                txn.pfcDetailed = enrichments.personalFinanceCategory?.detailed
+                txn.pfcConfidence = enrichments.personalFinanceCategory?.confidenceLevel
+                txn.logoUrl = enrichments.logoUrl
+                txn.website = enrichments.website
+                txn.paymentChannel = enrichments.paymentChannel
+
+                if let primaryCounterparty = enrichments.counterparties?.first {
+                    txn.counterpartyName = primaryCounterparty.name
+                    txn.counterpartyType = primaryCounterparty.type
+                    txn.counterpartyLogoUrl = primaryCounterparty.logoUrl
+                }
+
+                // Update category from PFC if available
+                if let pfcPrimary = enrichments.personalFinanceCategory?.primary {
+                    txn.category = categoryFromPFC(primary: pfcPrimary)
+                }
+
+                try await txn.save(on: req.db)
+                totalEnriched += 1
+            }
+        }
+
+        return EnrichResponse(enriched: totalEnriched)
+    }
+
     // MARK: - Helpers
 
     func syncTransactionsForItem(_ item: PlaidItem, on req: Request) async throws -> (added: Int, modified: Int, removed: Int) {
@@ -195,6 +265,17 @@ struct PlaidController: RouteCollection {
 
                 guard let accountId = account.id else { continue }
 
+                // Determine category: prefer PFC, fall back to legacy
+                let category: String
+                if let pfcPrimary = plaidTxn.personalFinanceCategory?.primary {
+                    category = categoryFromPFC(primary: pfcPrimary)
+                } else {
+                    category = plaidTxn.category?.first ?? "other"
+                }
+
+                // Extract primary counterparty (first one)
+                let primaryCounterparty = plaidTxn.counterparties?.first
+
                 let transaction = Transaction(
                     accountID: accountId,
                     userID: item.$user.id,
@@ -202,8 +283,18 @@ struct PlaidController: RouteCollection {
                     amount: plaidTxn.amount,
                     date: parseDate(plaidTxn.date) ?? Date(),
                     merchantName: plaidTxn.merchantName ?? plaidTxn.name,
-                    category: plaidTxn.category?.first ?? "other",
-                    isPending: plaidTxn.pending
+                    category: category,
+                    isPending: plaidTxn.pending,
+                    pfcPrimary: plaidTxn.personalFinanceCategory?.primary,
+                    pfcDetailed: plaidTxn.personalFinanceCategory?.detailed,
+                    pfcConfidence: plaidTxn.personalFinanceCategory?.confidenceLevel,
+                    logoUrl: plaidTxn.logoUrl,
+                    website: plaidTxn.website,
+                    paymentChannel: plaidTxn.paymentChannel,
+                    merchantEntityId: plaidTxn.merchantEntityId,
+                    counterpartyName: primaryCounterparty?.name,
+                    counterpartyType: primaryCounterparty?.type,
+                    counterpartyLogoUrl: primaryCounterparty?.logoUrl
                 )
                 try await transaction.save(on: req.db)
                 totalAdded += 1
@@ -218,8 +309,28 @@ struct PlaidController: RouteCollection {
                 existing.amount = plaidTxn.amount
                 existing.date = parseDate(plaidTxn.date) ?? existing.date
                 existing.merchantName = plaidTxn.merchantName ?? plaidTxn.name
-                existing.category = plaidTxn.category?.first ?? existing.category
                 existing.isPending = plaidTxn.pending
+
+                // Update category: prefer PFC, fall back to legacy
+                if let pfcPrimary = plaidTxn.personalFinanceCategory?.primary {
+                    existing.category = categoryFromPFC(primary: pfcPrimary)
+                } else {
+                    existing.category = plaidTxn.category?.first ?? existing.category
+                }
+
+                // Update enrichment fields
+                existing.pfcPrimary = plaidTxn.personalFinanceCategory?.primary
+                existing.pfcDetailed = plaidTxn.personalFinanceCategory?.detailed
+                existing.pfcConfidence = plaidTxn.personalFinanceCategory?.confidenceLevel
+                existing.logoUrl = plaidTxn.logoUrl
+                existing.website = plaidTxn.website
+                existing.paymentChannel = plaidTxn.paymentChannel
+                existing.merchantEntityId = plaidTxn.merchantEntityId
+
+                let primaryCounterparty = plaidTxn.counterparties?.first
+                existing.counterpartyName = primaryCounterparty?.name
+                existing.counterpartyType = primaryCounterparty?.type
+                existing.counterpartyLogoUrl = primaryCounterparty?.logoUrl
 
                 try await existing.save(on: req.db)
                 totalModified += 1
@@ -276,5 +387,42 @@ struct PlaidWebhookError: Content {
         case errorType = "error_type"
         case errorCode = "error_code"
         case errorMessage = "error_message"
+    }
+}
+
+// MARK: - PFC Category Mapping
+
+/// Maps Plaid Personal Finance Category primary values to Drift spending category strings.
+/// Mirrors SpendingCategory.fromPFC(primary:) in the shared package.
+private func categoryFromPFC(primary: String) -> String {
+    switch primary {
+    case "FOOD_AND_DRINK": return "food"
+    case "TRANSPORTATION": return "transport"
+    case "TRAVEL": return "transport"
+    case "GENERAL_MERCHANDISE": return "shopping"
+    case "HOME_IMPROVEMENT": return "shopping"
+    case "ENTERTAINMENT": return "entertainment"
+    case "RENT_AND_UTILITIES": return "utilities"
+    case "MEDICAL": return "health"
+    case "PERSONAL_CARE": return "health"
+    case "INCOME": return "income"
+    case "TRANSFER_IN": return "transfer"
+    case "TRANSFER_OUT": return "transfer"
+    case "LOAN_PAYMENTS": return "transfer"
+    case "LOAN_DISBURSEMENTS": return "transfer"
+    case "BANK_FEES": return "other"
+    case "GENERAL_SERVICES": return "other"
+    case "GOVERNMENT_AND_NON_PROFIT": return "other"
+    default: return "other"
+    }
+}
+
+// MARK: - Array Chunking
+
+extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        stride(from: 0, to: count, by: size).map {
+            Array(self[$0..<Swift.min($0 + size, count)])
+        }
     }
 }

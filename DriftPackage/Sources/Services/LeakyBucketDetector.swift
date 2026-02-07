@@ -112,7 +112,8 @@ public actor LeakyBucketDetector {
             confidenceScore: confidence,
             occurrenceCount: transactions.count,
             firstOccurrence: sorted.first?.date,
-            lastOccurrence: sorted.last?.date
+            lastOccurrence: sorted.last?.date,
+            logoUrl: transactions.first?.logoUrl
         )
     }
 

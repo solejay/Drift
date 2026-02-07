@@ -187,19 +187,22 @@ public struct MerchantBreakdownDTO: Codable, Sendable, Identifiable, Hashable {
     public let amount: Decimal
     public let transactionCount: Int
     public let category: String
+    public let logoUrl: String?
 
     public init(
         id: UUID = UUID(),
         merchantName: String,
         amount: Decimal,
         transactionCount: Int,
-        category: String
+        category: String,
+        logoUrl: String? = nil
     ) {
         self.id = id
         self.merchantName = merchantName
         self.amount = amount
         self.transactionCount = transactionCount
         self.category = category
+        self.logoUrl = logoUrl
     }
 }
 

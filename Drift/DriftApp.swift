@@ -52,9 +52,6 @@ struct DriftApp: App {
                         }
                 } else if !appState.isAuthenticated {
                     LoginView()
-                        .onReceive(appState.authService.$isAuthenticated) { isAuth in
-                            appState.isAuthenticated = isAuth
-                        }
                 } else if !appState.hasLinkedAccounts {
                     LinkAccountView()
                         .onReceive(appState.plaidService.$linkedAccounts) { accounts in
@@ -67,6 +64,14 @@ struct DriftApp: App {
             .task {
                 checkBiometricLock()
                 await appState.initialize()
+            }
+            .onReceive(appState.authService.$isAuthenticated) { isAuth in
+                if appState.isAuthenticated != isAuth {
+                    appState.isAuthenticated = isAuth
+                    if !isAuth {
+                        appState.hasLinkedAccounts = false
+                    }
+                }
             }
             .preferredColorScheme(preferredScheme)
         }

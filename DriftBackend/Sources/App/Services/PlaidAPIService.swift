@@ -63,7 +63,7 @@ actor PlaidAPIService {
             user: .init(clientUserId: userId.uuidString),
             clientName: "Drift",
             products: ["transactions"],
-            countryCodes: ["US"],
+            countryCodes: ["CA"],
             language: "en",
             redirectUri: redirectUri
         )
@@ -173,6 +173,27 @@ actor PlaidAPIService {
         let name: String
         let category: [String]?
         let pending: Bool
+        let personalFinanceCategory: PersonalFinanceCategory?
+        let logoUrl: String?
+        let website: String?
+        let paymentChannel: String?
+        let merchantEntityId: String?
+        let counterparties: [Counterparty]?
+    }
+
+    struct PersonalFinanceCategory: Content {
+        let primary: String
+        let detailed: String
+        let confidenceLevel: String?
+    }
+
+    struct Counterparty: Content {
+        let name: String
+        let entityId: String?
+        let type: String?
+        let website: String?
+        let logoUrl: String?
+        let confidenceLevel: String?
     }
 
     func syncTransactions(accessToken: String, cursor: String?) async throws -> TransactionSyncResult {
@@ -218,6 +239,59 @@ actor PlaidAPIService {
         )
     }
 
+    // MARK: - Enrich Transactions
+
+    struct EnrichRequest: Content {
+        let clientId: String
+        let secret: String
+        let accountType: String
+        let transactions: [EnrichTransaction]
+
+        struct EnrichTransaction: Content {
+            let id: String
+            let description: String
+            let amount: Double
+            let direction: String
+            let isoCurrencyCode: String
+        }
+    }
+
+    struct EnrichResponse: Content {
+        let enrichedTransactions: [EnrichedTransaction]
+    }
+
+    struct EnrichedTransaction: Content {
+        let id: String
+        let enrichments: Enrichments
+
+        struct Enrichments: Content {
+            let merchantName: String?
+            let website: String?
+            let logoUrl: String?
+            let paymentChannel: String?
+            let personalFinanceCategory: PersonalFinanceCategory?
+            let counterparties: [Counterparty]?
+        }
+    }
+
+    func enrichTransactions(_ transactions: [EnrichRequest.EnrichTransaction],
+                            accountType: String) async throws -> [EnrichedTransaction] {
+        let request = EnrichRequest(
+            clientId: clientId,
+            secret: secret,
+            accountType: accountType,
+            transactions: transactions
+        )
+
+        let response = try await client.post(URI(string: "\(environment.baseURL)/transactions/enrich")) { req in
+            try req.content.encode(request)
+            req.headers.contentType = .json
+        }
+
+        let result = try response.content.decode(EnrichResponse.self)
+        return result.enrichedTransactions
+    }
+
     // MARK: - Get Institution
 
     struct PlaidInstitution: Content {
@@ -241,7 +315,7 @@ actor PlaidAPIService {
             clientId: clientId,
             secret: secret,
             institutionId: institutionId,
-            countryCodes: ["US"]
+            countryCodes: ["CA"]
         )
 
         let response = try await client.post(URI(string: "\(environment.baseURL)/institutions/get_by_id")) { req in

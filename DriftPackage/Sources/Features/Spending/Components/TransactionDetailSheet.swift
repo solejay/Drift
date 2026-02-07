@@ -56,7 +56,7 @@ public struct TransactionDetailSheet: View {
 
     private var headerSection: some View {
         VStack(spacing: DesignTokens.Spacing.sm) {
-            CategoryIconFromString(category: item.category, size: .large)
+            MerchantLogoView(logoUrl: item.logoUrl, category: item.category, size: .large)
 
             Text(item.name)
                 .font(.system(size: 24, weight: .semibold, design: .serif))

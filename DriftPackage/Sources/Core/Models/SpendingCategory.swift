@@ -58,7 +58,49 @@ public enum SpendingCategory: String, Codable, CaseIterable, Sendable {
         }
     }
 
-    /// Map from Plaid category to SpendingCategory
+    /// Map from Plaid Personal Finance Category primary to SpendingCategory
+    public static func fromPFC(primary: String) -> SpendingCategory {
+        switch primary {
+        case "FOOD_AND_DRINK":
+            return .food
+        case "TRANSPORTATION":
+            return .transport
+        case "TRAVEL":
+            return .transport
+        case "GENERAL_MERCHANDISE":
+            return .shopping
+        case "HOME_IMPROVEMENT":
+            return .shopping
+        case "ENTERTAINMENT":
+            return .entertainment
+        case "RENT_AND_UTILITIES":
+            return .utilities
+        case "MEDICAL":
+            return .health
+        case "PERSONAL_CARE":
+            return .health
+        case "INCOME":
+            return .income
+        case "TRANSFER_IN":
+            return .transfer
+        case "TRANSFER_OUT":
+            return .transfer
+        case "LOAN_PAYMENTS":
+            return .transfer
+        case "LOAN_DISBURSEMENTS":
+            return .transfer
+        case "BANK_FEES":
+            return .other
+        case "GENERAL_SERVICES":
+            return .other
+        case "GOVERNMENT_AND_NON_PROFIT":
+            return .other
+        default:
+            return .other
+        }
+    }
+
+    /// Map from Plaid legacy category to SpendingCategory
     public static func from(plaidCategory: String) -> SpendingCategory {
         let lowercased = plaidCategory.lowercased()
 

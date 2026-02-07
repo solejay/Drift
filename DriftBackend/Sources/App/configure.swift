@@ -45,6 +45,7 @@ func configure(_ app: Application) async throws {
     app.migrations.add(CreateTransaction())
     app.migrations.add(CreateUserPreference())
     app.migrations.add(CreateDeviceToken())
+    app.migrations.add(AddTransactionEnrichment())
 
     // Run migrations in development
     if app.environment == .development {

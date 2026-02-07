@@ -78,7 +78,11 @@ public struct SpendingView: View {
                         if !data.categoryBreakdown.isEmpty {
                             CategoryBreakdownSection(
                                 categories: data.categoryBreakdown,
-                                maxItems: viewModel.selectedPeriod == .month ? 6 : 5
+                                maxItems: viewModel.selectedPeriod == .month ? 6 : 5,
+                                period: viewModel.selectedPeriod,
+                                selectedDate: viewModel.selectedDate,
+                                selectedMonth: viewModel.selectedMonth,
+                                selectedYear: viewModel.selectedYear
                             )
                             .staggeredAppear(index: 5)
                         }

@@ -7,6 +7,7 @@ public struct LeakyBucketsView: View {
     @StateObject private var viewModel = LeakyBucketsViewModel()
     @State private var selectedBucket: LeakyBucket?
     @State private var showUpdated = false
+    @State private var showDateRangePicker = false
 
     public init() {}
 
@@ -23,6 +24,12 @@ public struct LeakyBucketsView: View {
                     )
                     .staggeredAppear(index: 0)
 
+                    LeakyFilterCard(
+                        selectedFilter: $viewModel.selectedFilter,
+                        showDateRangePicker: $showDateRangePicker
+                    )
+                    .staggeredAppear(index: 1)
+
                     if let error = viewModel.error {
                         LeakyErrorCard(message: error.localizedDescription) {
                             Task { await viewModel.analyze() }
@@ -33,7 +40,7 @@ public struct LeakyBucketsView: View {
                         emptyState
                     } else if !viewModel.buckets.isEmpty {
                         summaryCard
-                            .staggeredAppear(index: 1)
+                            .staggeredAppear(index: 2)
                         bucketList
                     }
 
@@ -63,13 +70,17 @@ public struct LeakyBucketsView: View {
         .refreshable {
             HapticManager.impact(.light)
             await viewModel.refresh()
-            HapticManager.notification(.success)
-            withAnimation(DesignTokens.Animation.spring) {
-                showUpdated = true
-            }
-            try? await Task.sleep(for: .seconds(1.5))
-            withAnimation(DesignTokens.Animation.spring) {
-                showUpdated = false
+            if viewModel.error == nil {
+                HapticManager.notification(.success)
+                withAnimation(DesignTokens.Animation.spring) {
+                    showUpdated = true
+                }
+                try? await Task.sleep(for: .seconds(1.5))
+                withAnimation(DesignTokens.Animation.spring) {
+                    showUpdated = false
+                }
+            } else {
+                HapticManager.notification(.error)
             }
         }
         .task {
@@ -82,6 +93,9 @@ public struct LeakyBucketsView: View {
         }
         .sheet(item: $selectedBucket) { bucket in
             BucketDetailSheet(bucket: bucket)
+        }
+        .sheet(isPresented: $showDateRangePicker) {
+            DateRangePickerSheet(selectedFilter: $viewModel.selectedFilter)
         }
     }
 
@@ -205,7 +219,7 @@ public struct LeakyBucketsView: View {
                         LeakyBucketCard(bucket: bucket) {
                             selectedBucket = bucket
                         }
-                        .staggeredAppear(index: categoryIndex * 3 + bucketIndex + 2)
+                        .staggeredAppear(index: categoryIndex * 3 + bucketIndex + 3)
                     }
                 }
             }
@@ -250,7 +264,7 @@ private struct BucketDetailSheet: View {
                 ScrollView {
                     VStack(spacing: DesignTokens.Spacing.lg) {
                         VStack(spacing: DesignTokens.Spacing.md) {
-                            CategoryIcon(category: bucket.category, size: .large)
+                            MerchantLogoCategoryView(logoUrl: bucket.logoUrl, category: bucket.category, size: .large)
 
                             Text(bucket.merchantName)
                                 .font(.system(size: 26, weight: .semibold, design: .serif))
@@ -423,6 +437,180 @@ private struct LeakyErrorCard: View {
             }
         }
         .accessibilityElement(children: .combine)
+    }
+}
+
+// MARK: - Filter Card
+
+private struct LeakyFilterCard: View {
+    @Binding var selectedFilter: LeakyBucketFilter
+    @Binding var showDateRangePicker: Bool
+
+    private var isCustomRange: Bool {
+        if case .dateRange = selectedFilter { return true }
+        return false
+    }
+
+    var body: some View {
+        HStack {
+            Image(systemName: "calendar")
+                .font(.subheadline)
+                .foregroundStyle(DriftPalette.muted)
+
+            Menu {
+                ForEach(LeakyBucketFilter.fixedCases, id: \.label) { filter in
+                    Button {
+                        HapticManager.selection()
+                        withAnimation(DesignTokens.Animation.spring) {
+                            selectedFilter = filter
+                        }
+                    } label: {
+                        if selectedFilter == filter {
+                            Label(filter.label, systemImage: "checkmark")
+                        } else {
+                            Text(filter.label)
+                        }
+                    }
+                }
+
+                Divider()
+
+                Button {
+                    HapticManager.selection()
+                    showDateRangePicker = true
+                } label: {
+                    if isCustomRange {
+                        Label("Custom Range", systemImage: "checkmark")
+                    } else {
+                        Text("Custom Range")
+                    }
+                }
+            } label: {
+                HStack(spacing: DesignTokens.Spacing.xs) {
+                    Text(displayLabel)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(DriftPalette.ink)
+
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(DriftPalette.muted)
+                }
+                .padding(.horizontal, DesignTokens.Spacing.md)
+                .padding(.vertical, DesignTokens.Spacing.sm)
+                .background {
+                    Capsule().fill(DriftPalette.chip)
+                }
+            }
+
+            Spacer()
+        }
+    }
+
+    private var displayLabel: String {
+        if isCustomRange, case .dateRange(let from, let to) = selectedFilter {
+            return formatRange(from: from, to: to)
+        }
+        return selectedFilter.label
+    }
+
+    private func formatRange(from: Date, to: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d"
+        return "\(formatter.string(from: from)) – \(formatter.string(from: to))"
+    }
+}
+
+// MARK: - Date Range Picker Sheet
+
+private struct DateRangePickerSheet: View {
+    @Binding var selectedFilter: LeakyBucketFilter
+    @Environment(\.dismiss) private var dismiss
+    @State private var fromDate: Date
+    @State private var toDate: Date
+
+    init(selectedFilter: Binding<LeakyBucketFilter>) {
+        self._selectedFilter = selectedFilter
+        if case .dateRange(let from, let to) = selectedFilter.wrappedValue {
+            self._fromDate = State(initialValue: from)
+            self._toDate = State(initialValue: to)
+        } else {
+            let now = Date()
+            let monthAgo = Calendar.current.date(byAdding: .month, value: -1, to: now)!
+            self._fromDate = State(initialValue: monthAgo)
+            self._toDate = State(initialValue: now)
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                DriftBackground(animated: false)
+
+                ScrollView {
+                    VStack(spacing: DesignTokens.Spacing.lg) {
+                        GlassCard {
+                            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                                Text("From")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(DriftPalette.muted)
+                                    .textCase(.uppercase)
+                                    .tracking(DesignTokens.Typography.sectionHeaderTracking)
+
+                                DatePicker(
+                                    "From",
+                                    selection: $fromDate,
+                                    in: ...Date(),
+                                    displayedComponents: .date
+                                )
+                                .datePickerStyle(.graphical)
+                                .tint(DriftPalette.accentDeep)
+                                .labelsHidden()
+                            }
+                        }
+
+                        GlassCard {
+                            VStack(alignment: .leading, spacing: DesignTokens.Spacing.md) {
+                                Text("To")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(DriftPalette.muted)
+                                    .textCase(.uppercase)
+                                    .tracking(DesignTokens.Typography.sectionHeaderTracking)
+
+                                DatePicker(
+                                    "To",
+                                    selection: $toDate,
+                                    in: ...Date(),
+                                    displayedComponents: .date
+                                )
+                                .datePickerStyle(.graphical)
+                                .tint(DriftPalette.accentDeep)
+                                .labelsHidden()
+                            }
+                        }
+
+                        Button {
+                            HapticManager.impact(.medium)
+                            withAnimation(DesignTokens.Animation.spring) {
+                                selectedFilter = .dateRange(fromDate, toDate)
+                            }
+                            dismiss()
+                        } label: {
+                            Text("Apply")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.glassProminentPill)
+                    }
+                    .padding()
+                }
+            }
+            .navigationTitle("Date Range")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
     }
 }
 

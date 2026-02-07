@@ -92,6 +92,13 @@ public enum TopSpendingItem: Identifiable, Hashable {
             return "\(m.transactionCount) visit\(m.transactionCount == 1 ? "" : "s")"
         }
     }
+
+    public var logoUrl: String? {
+        switch self {
+        case .transaction(let t): return t.logoUrl ?? t.counterpartyLogoUrl
+        case .merchant(let m): return m.logoUrl
+        }
+    }
 }
 
 // MARK: - Spending Data
@@ -172,6 +179,7 @@ public final class SpendingViewModel: ObservableObject {
 
     private let summaryService: SummaryService
     private let calendar = Calendar.current
+    private var loadTask: Task<Void, Never>?
 
     // MARK: - Initialization
 
@@ -245,25 +253,38 @@ public final class SpendingViewModel: ObservableObject {
     // MARK: - Actions
 
     public func loadData() async {
-        isLoading = true
-        defer { isLoading = false }
+        loadTask?.cancel()
 
-        do {
-            switch selectedPeriod {
-            case .day:
-                let response = try await summaryService.fetchDailySummary(for: selectedDate)
-                spendingData = transformDailyResponse(response)
-            case .week:
-                let response = try await summaryService.fetchWeeklySummary(for: selectedDate)
-                spendingData = transformWeeklyResponse(response)
-            case .month:
-                let response = try await summaryService.fetchMonthlySummary(month: selectedMonth, year: selectedYear)
-                spendingData = transformMonthlyResponse(response)
+        let task = Task {
+            isLoading = true
+            defer { isLoading = false }
+
+            do {
+                try Task.checkCancellation()
+
+                switch selectedPeriod {
+                case .day:
+                    let response = try await summaryService.fetchDailySummary(for: selectedDate)
+                    try Task.checkCancellation()
+                    spendingData = transformDailyResponse(response)
+                case .week:
+                    let response = try await summaryService.fetchWeeklySummary(for: selectedDate)
+                    try Task.checkCancellation()
+                    spendingData = transformWeeklyResponse(response)
+                case .month:
+                    let response = try await summaryService.fetchMonthlySummary(month: selectedMonth, year: selectedYear)
+                    try Task.checkCancellation()
+                    spendingData = transformMonthlyResponse(response)
+                }
+                error = nil
+            } catch is CancellationError {
+                // Cancelled by a newer load — ignore
+            } catch {
+                self.error = error
             }
-            error = nil
-        } catch {
-            self.error = error
         }
+        loadTask = task
+        await task.value
     }
 
     public func selectPrevious() {

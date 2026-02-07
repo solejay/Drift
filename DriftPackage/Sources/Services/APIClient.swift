@@ -141,6 +141,9 @@ public actor APIClient {
 
             switch httpResponse.statusCode {
             case 200...299:
+                if data.isEmpty, let empty = EmptyResponse() as? T {
+                    return empty
+                }
                 return try decoder.decode(T.self, from: data)
 
             case 401:

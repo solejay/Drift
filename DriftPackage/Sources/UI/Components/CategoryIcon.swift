@@ -61,6 +61,80 @@ public struct CategoryIconFromString: View {
     }
 }
 
+/// Displays a merchant logo from URL, falling back to CategoryIcon
+public struct MerchantLogoView: View {
+    private let logoUrl: String?
+    private let category: String
+    private let size: CategoryIcon.Size
+
+    public init(logoUrl: String?, category: String, size: CategoryIcon.Size = .medium) {
+        self.logoUrl = logoUrl
+        self.category = category
+        self.size = size
+    }
+
+    public var body: some View {
+        if let logoUrl, let url = URL(string: logoUrl) {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: size.dimension, height: size.dimension)
+                        .clipShape(RoundedRectangle(cornerRadius: size.dimension * 0.2))
+                case .failure:
+                    CategoryIconFromString(category: category, size: size)
+                case .empty:
+                    ProgressView()
+                        .frame(width: size.dimension, height: size.dimension)
+                @unknown default:
+                    CategoryIconFromString(category: category, size: size)
+                }
+            }
+        } else {
+            CategoryIconFromString(category: category, size: size)
+        }
+    }
+}
+
+/// Displays a merchant logo from URL, falling back to CategoryIcon (SpendingCategory version)
+public struct MerchantLogoCategoryView: View {
+    private let logoUrl: String?
+    private let category: SpendingCategory
+    private let size: CategoryIcon.Size
+
+    public init(logoUrl: String?, category: SpendingCategory, size: CategoryIcon.Size = .medium) {
+        self.logoUrl = logoUrl
+        self.category = category
+        self.size = size
+    }
+
+    public var body: some View {
+        if let logoUrl, let url = URL(string: logoUrl) {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: size.dimension, height: size.dimension)
+                        .clipShape(RoundedRectangle(cornerRadius: size.dimension * 0.2))
+                case .failure:
+                    CategoryIcon(category: category, size: size)
+                case .empty:
+                    ProgressView()
+                        .frame(width: size.dimension, height: size.dimension)
+                @unknown default:
+                    CategoryIcon(category: category, size: size)
+                }
+            }
+        } else {
+            CategoryIcon(category: category, size: size)
+        }
+    }
+}
+
 #Preview {
     VStack(spacing: 16) {
         HStack(spacing: 16) {

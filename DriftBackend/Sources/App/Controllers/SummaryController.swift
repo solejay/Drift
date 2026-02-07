@@ -127,6 +127,7 @@ struct SummaryController: RouteCollection {
         let amount: Decimal
         let transactionCount: Int
         let category: String
+        let logoUrl: String?
     }
 
     func weekly(req: Request) async throws -> WeeklySummaryResponse {
@@ -183,12 +184,14 @@ struct SummaryController: RouteCollection {
         // Top merchants
         let merchantGrouped = Dictionary(grouping: expenses, by: \.merchantName)
         let topMerchants = merchantGrouped.map { merchant, txns -> MerchantBreakdownDTO in
-            MerchantBreakdownDTO(
+            let logo = txns.first?.logoUrl ?? txns.first?.counterpartyLogoUrl
+            return MerchantBreakdownDTO(
                 id: UUID(),
                 merchantName: merchant,
                 amount: Decimal(txns.map(\.amount).reduce(0, +)),
                 transactionCount: txns.count,
-                category: txns.first?.category ?? "other"
+                category: txns.first?.category ?? "other",
+                logoUrl: logo
             )
         }
         .sorted { $0.amount > $1.amount }
@@ -332,12 +335,14 @@ struct SummaryController: RouteCollection {
         // Top merchants
         let merchantGrouped = Dictionary(grouping: expenses, by: \.merchantName)
         let topMerchants = merchantGrouped.map { merchant, txns -> MerchantBreakdownDTO in
-            MerchantBreakdownDTO(
+            let logo = txns.first?.logoUrl ?? txns.first?.counterpartyLogoUrl
+            return MerchantBreakdownDTO(
                 id: UUID(),
                 merchantName: merchant,
                 amount: Decimal(txns.map(\.amount).reduce(0, +)),
                 transactionCount: txns.count,
-                category: txns.first?.category ?? "other"
+                category: txns.first?.category ?? "other",
+                logoUrl: logo
             )
         }
         .sorted { $0.amount > $1.amount }

@@ -13,6 +13,16 @@ public struct TransactionDTO: Codable, Sendable, Identifiable, Hashable {
     public let description: String?
     public let isPending: Bool
     public let isExcluded: Bool
+    public let pfcPrimary: String?
+    public let pfcDetailed: String?
+    public let pfcConfidence: String?
+    public let logoUrl: String?
+    public let website: String?
+    public let paymentChannel: String?
+    public let merchantEntityId: String?
+    public let counterpartyName: String?
+    public let counterpartyType: String?
+    public let counterpartyLogoUrl: String?
 
     public init(
         id: UUID,
@@ -24,7 +34,17 @@ public struct TransactionDTO: Codable, Sendable, Identifiable, Hashable {
         category: String,
         description: String? = nil,
         isPending: Bool = false,
-        isExcluded: Bool = false
+        isExcluded: Bool = false,
+        pfcPrimary: String? = nil,
+        pfcDetailed: String? = nil,
+        pfcConfidence: String? = nil,
+        logoUrl: String? = nil,
+        website: String? = nil,
+        paymentChannel: String? = nil,
+        merchantEntityId: String? = nil,
+        counterpartyName: String? = nil,
+        counterpartyType: String? = nil,
+        counterpartyLogoUrl: String? = nil
     ) {
         self.id = id
         self.accountId = accountId
@@ -36,6 +56,16 @@ public struct TransactionDTO: Codable, Sendable, Identifiable, Hashable {
         self.description = description
         self.isPending = isPending
         self.isExcluded = isExcluded
+        self.pfcPrimary = pfcPrimary
+        self.pfcDetailed = pfcDetailed
+        self.pfcConfidence = pfcConfidence
+        self.logoUrl = logoUrl
+        self.website = website
+        self.paymentChannel = paymentChannel
+        self.merchantEntityId = merchantEntityId
+        self.counterpartyName = counterpartyName
+        self.counterpartyType = counterpartyType
+        self.counterpartyLogoUrl = counterpartyLogoUrl
     }
 }
 

@@ -37,6 +37,38 @@ final class Transaction: Model, Content, @unchecked Sendable {
     @Field(key: "is_excluded")
     var isExcluded: Bool
 
+    // MARK: - Enrichment Fields
+
+    @Field(key: "pfc_primary")
+    var pfcPrimary: String?
+
+    @Field(key: "pfc_detailed")
+    var pfcDetailed: String?
+
+    @Field(key: "pfc_confidence")
+    var pfcConfidence: String?
+
+    @Field(key: "logo_url")
+    var logoUrl: String?
+
+    @Field(key: "website")
+    var website: String?
+
+    @Field(key: "payment_channel")
+    var paymentChannel: String?
+
+    @Field(key: "merchant_entity_id")
+    var merchantEntityId: String?
+
+    @Field(key: "counterparty_name")
+    var counterpartyName: String?
+
+    @Field(key: "counterparty_type")
+    var counterpartyType: String?
+
+    @Field(key: "counterparty_logo_url")
+    var counterpartyLogoUrl: String?
+
     @Timestamp(key: "created_at", on: .create)
     var createdAt: Date?
 
@@ -56,7 +88,17 @@ final class Transaction: Model, Content, @unchecked Sendable {
         category: String,
         description: String? = nil,
         isPending: Bool = false,
-        isExcluded: Bool = false
+        isExcluded: Bool = false,
+        pfcPrimary: String? = nil,
+        pfcDetailed: String? = nil,
+        pfcConfidence: String? = nil,
+        logoUrl: String? = nil,
+        website: String? = nil,
+        paymentChannel: String? = nil,
+        merchantEntityId: String? = nil,
+        counterpartyName: String? = nil,
+        counterpartyType: String? = nil,
+        counterpartyLogoUrl: String? = nil
     ) {
         self.id = id
         self.$account.id = accountID
@@ -69,6 +111,16 @@ final class Transaction: Model, Content, @unchecked Sendable {
         self.transactionDescription = description
         self.isPending = isPending
         self.isExcluded = isExcluded
+        self.pfcPrimary = pfcPrimary
+        self.pfcDetailed = pfcDetailed
+        self.pfcConfidence = pfcConfidence
+        self.logoUrl = logoUrl
+        self.website = website
+        self.paymentChannel = paymentChannel
+        self.merchantEntityId = merchantEntityId
+        self.counterpartyName = counterpartyName
+        self.counterpartyType = counterpartyType
+        self.counterpartyLogoUrl = counterpartyLogoUrl
     }
 }
 
@@ -86,7 +138,17 @@ extension Transaction {
             category: category,
             description: transactionDescription,
             isPending: isPending,
-            isExcluded: isExcluded
+            isExcluded: isExcluded,
+            pfcPrimary: pfcPrimary,
+            pfcDetailed: pfcDetailed,
+            pfcConfidence: pfcConfidence,
+            logoUrl: logoUrl,
+            website: website,
+            paymentChannel: paymentChannel,
+            merchantEntityId: merchantEntityId,
+            counterpartyName: counterpartyName,
+            counterpartyType: counterpartyType,
+            counterpartyLogoUrl: counterpartyLogoUrl
         )
     }
 }
@@ -102,4 +164,14 @@ struct TransactionDTO: Content {
     let description: String?
     let isPending: Bool
     let isExcluded: Bool
+    let pfcPrimary: String?
+    let pfcDetailed: String?
+    let pfcConfidence: String?
+    let logoUrl: String?
+    let website: String?
+    let paymentChannel: String?
+    let merchantEntityId: String?
+    let counterpartyName: String?
+    let counterpartyType: String?
+    let counterpartyLogoUrl: String?
 }

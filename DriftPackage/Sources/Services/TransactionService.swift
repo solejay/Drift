@@ -103,6 +103,22 @@ public final class TransactionService: ObservableObject {
         return response.transactions
     }
 
+    /// Get transactions for a specific category within a date range
+    public func fetchTransactions(from startDate: Date, to endDate: Date, category: String) async throws -> [TransactionDTO] {
+        if AppConfiguration.useMockData {
+            return Self.mockCategoryTransactions(category: category)
+        }
+
+        let response: TransactionListResponse = try await api.get("/api/v1/transactions", queryItems: [
+            URLQueryItem(name: "startDate", value: ISO8601DateFormatter().string(from: startDate)),
+            URLQueryItem(name: "endDate", value: ISO8601DateFormatter().string(from: endDate)),
+            URLQueryItem(name: "categories", value: category),
+            URLQueryItem(name: "perPage", value: "200")
+        ])
+
+        return response.transactions
+    }
+
     /// Get transactions for a specific date range
     public func fetchTransactions(from startDate: Date, to endDate: Date) async throws -> [TransactionDTO] {
         // Return empty array when using mock data, the LeakyBucketDetector will return mock data
@@ -117,6 +133,39 @@ public final class TransactionService: ObservableObject {
         ])
 
         return response.transactions
+    }
+
+    // MARK: - Mock Data
+
+    private static func mockCategoryTransactions(category: String) -> [TransactionDTO] {
+        let now = Date()
+        let calendar = Calendar.current
+
+        let merchantsByCategory: [String: [(name: String, amount: Decimal)]] = [
+            "food": [("Chipotle", 14.50), ("Whole Foods", 62.30), ("Starbucks", 6.75), ("Sweetgreen", 15.20), ("Trader Joe's", 45.80)],
+            "transport": [("Uber", 18.50), ("Lyft", 22.00), ("Shell Gas", 45.00), ("Uber", 12.75)],
+            "shopping": [("Amazon", 89.99), ("Target", 45.50), ("Nike", 125.00), ("Amazon", 24.99)],
+            "entertainment": [("Netflix", 15.99), ("AMC Theatres", 28.00), ("Spotify", 10.99), ("Steam", 39.99)],
+            "subscriptions": [("Netflix", 15.99), ("Spotify", 10.99), ("iCloud", 2.99), ("ChatGPT", 20.00)],
+            "utilities": [("Con Edison", 145.00), ("Verizon", 85.00), ("Spectrum", 79.99)],
+            "health": [("CVS Pharmacy", 32.50), ("Planet Fitness", 24.99), ("Walgreens", 18.75)],
+        ]
+
+        let merchants = merchantsByCategory[category.lowercased()] ?? [("Unknown Merchant", 25.00), ("Other Store", 15.00)]
+
+        return merchants.enumerated().map { index, merchant in
+            let date = calendar.date(byAdding: .day, value: -index, to: now) ?? now
+            return TransactionDTO(
+                id: UUID(),
+                accountId: UUID(),
+                plaidTransactionId: "mock-\(index)",
+                amount: merchant.amount,
+                date: date,
+                merchantName: merchant.name,
+                category: category.lowercased(),
+                isExcluded: false
+            )
+        }
     }
 }
 
@@ -193,10 +242,10 @@ public final class SummaryService: ObservableObject {
         ]
 
         let transactions = [
-            TransactionDTO(id: UUID(), accountId: UUID(), plaidTransactionId: "1", amount: 35.99, date: date, merchantName: "Amazon", category: "Shopping", isExcluded: false),
-            TransactionDTO(id: UUID(), accountId: UUID(), plaidTransactionId: "2", amount: 18.99, date: date, merchantName: "Netflix", category: "Entertainment", isExcluded: false),
-            TransactionDTO(id: UUID(), accountId: UUID(), plaidTransactionId: "3", amount: 22.50, date: date, merchantName: "Chipotle", category: "Food", isExcluded: false),
-            TransactionDTO(id: UUID(), accountId: UUID(), plaidTransactionId: "4", amount: 15.00, date: date, merchantName: "Uber", category: "Transport", isExcluded: false),
+            TransactionDTO(id: UUID(), accountId: UUID(), plaidTransactionId: "1", amount: 35.99, date: date, merchantName: "Amazon", category: "Shopping", isExcluded: false, logoUrl: "https://plaid-merchant-logos.plaid.com/amazon_1060.png"),
+            TransactionDTO(id: UUID(), accountId: UUID(), plaidTransactionId: "2", amount: 18.99, date: date, merchantName: "Netflix", category: "Entertainment", isExcluded: false, logoUrl: "https://plaid-merchant-logos.plaid.com/netflix_1060.png"),
+            TransactionDTO(id: UUID(), accountId: UUID(), plaidTransactionId: "3", amount: 22.50, date: date, merchantName: "Chipotle", category: "Food", isExcluded: false, logoUrl: "https://plaid-merchant-logos.plaid.com/chipotle_1060.png"),
+            TransactionDTO(id: UUID(), accountId: UUID(), plaidTransactionId: "4", amount: 15.00, date: date, merchantName: "Uber", category: "Transport", isExcluded: false, logoUrl: "https://plaid-merchant-logos.plaid.com/uber_1060.png"),
         ]
 
         return DailySummaryResponse(
@@ -230,10 +279,10 @@ public final class SummaryService: ObservableObject {
         }
 
         let merchants = [
-            MerchantBreakdownDTO(merchantName: "Whole Foods", amount: 125.40, transactionCount: 4, category: "Food"),
-            MerchantBreakdownDTO(merchantName: "Uber", amount: 89.50, transactionCount: 8, category: "Transport"),
-            MerchantBreakdownDTO(merchantName: "Amazon", amount: 156.99, transactionCount: 3, category: "Shopping"),
-            MerchantBreakdownDTO(merchantName: "Starbucks", amount: 42.50, transactionCount: 6, category: "Food"),
+            MerchantBreakdownDTO(merchantName: "Whole Foods", amount: 125.40, transactionCount: 4, category: "Food", logoUrl: "https://plaid-merchant-logos.plaid.com/whole_foods_1060.png"),
+            MerchantBreakdownDTO(merchantName: "Uber", amount: 89.50, transactionCount: 8, category: "Transport", logoUrl: "https://plaid-merchant-logos.plaid.com/uber_1060.png"),
+            MerchantBreakdownDTO(merchantName: "Amazon", amount: 156.99, transactionCount: 3, category: "Shopping", logoUrl: "https://plaid-merchant-logos.plaid.com/amazon_1060.png"),
+            MerchantBreakdownDTO(merchantName: "Starbucks", amount: 42.50, transactionCount: 6, category: "Food", logoUrl: "https://plaid-merchant-logos.plaid.com/starbucks_1060.png"),
         ]
 
         return WeeklySummaryResponse(
@@ -286,11 +335,11 @@ public final class SummaryService: ObservableObject {
         }
 
         let merchants = [
-            MerchantBreakdownDTO(merchantName: "Whole Foods", amount: 425.40, transactionCount: 12, category: "Food"),
-            MerchantBreakdownDTO(merchantName: "Uber", amount: 289.50, transactionCount: 28, category: "Transport"),
-            MerchantBreakdownDTO(merchantName: "Amazon", amount: 456.99, transactionCount: 8, category: "Shopping"),
-            MerchantBreakdownDTO(merchantName: "Netflix", amount: 15.99, transactionCount: 1, category: "Subscriptions"),
-            MerchantBreakdownDTO(merchantName: "Spotify", amount: 10.99, transactionCount: 1, category: "Subscriptions"),
+            MerchantBreakdownDTO(merchantName: "Whole Foods", amount: 425.40, transactionCount: 12, category: "Food", logoUrl: "https://plaid-merchant-logos.plaid.com/whole_foods_1060.png"),
+            MerchantBreakdownDTO(merchantName: "Uber", amount: 289.50, transactionCount: 28, category: "Transport", logoUrl: "https://plaid-merchant-logos.plaid.com/uber_1060.png"),
+            MerchantBreakdownDTO(merchantName: "Amazon", amount: 456.99, transactionCount: 8, category: "Shopping", logoUrl: "https://plaid-merchant-logos.plaid.com/amazon_1060.png"),
+            MerchantBreakdownDTO(merchantName: "Netflix", amount: 15.99, transactionCount: 1, category: "Subscriptions", logoUrl: "https://plaid-merchant-logos.plaid.com/netflix_1060.png"),
+            MerchantBreakdownDTO(merchantName: "Spotify", amount: 10.99, transactionCount: 1, category: "Subscriptions", logoUrl: "https://plaid-merchant-logos.plaid.com/spotify_1060.png"),
         ]
 
         return MonthlySummaryResponse(
