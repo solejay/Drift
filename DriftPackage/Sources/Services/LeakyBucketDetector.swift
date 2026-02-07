@@ -35,10 +35,12 @@ public actor LeakyBucketDetector {
 
     /// Detect leaky buckets from transactions
     public func detect(from transactions: [TransactionDTO]) async -> [LeakyBucket] {
-        // Return mock leaky buckets when using mock data
-        if AppConfiguration.useMockData || transactions.isEmpty {
+        // Return mock leaky buckets only in mock mode
+        if AppConfiguration.useMockData {
             return Self.mockLeakyBuckets()
         }
+
+        guard !transactions.isEmpty else { return [] }
 
         // Filter to expenses only (positive amounts in Plaid convention)
         let expenses = transactions.filter { $0.amount > 0 && !$0.isExcluded && !$0.isPending }

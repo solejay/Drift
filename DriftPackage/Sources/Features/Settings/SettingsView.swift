@@ -67,8 +67,12 @@ public struct SettingsView: View {
                 HStack(spacing: DesignTokens.Spacing.md) {
                     Text(initials(for: user))
                         .font(.headline)
-                        .foregroundStyle(DriftPalette.accent)
+                        .foregroundStyle(.white)
                         .frame(width: 50, height: 50)
+                        .background(
+                            Circle()
+                                .fill(DriftPalette.accent)
+                        )
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(user.displayName ?? "User")
@@ -78,8 +82,28 @@ public struct SettingsView: View {
                             .font(.caption)
                             .foregroundStyle(DriftPalette.muted)
                     }
+
+                    Spacer()
                 }
                 .padding(.vertical, 4)
+            } else {
+                HStack(spacing: DesignTokens.Spacing.md) {
+                    Image(systemName: "person.circle.fill")
+                        .font(.system(size: 44))
+                        .foregroundStyle(DriftPalette.muted)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Loading profile...")
+                            .font(.headline)
+                            .foregroundStyle(DriftPalette.ink)
+                    }
+
+                    Spacer()
+                }
+                .padding(.vertical, 4)
+                .task {
+                    await authService.fetchUserProfile()
+                }
             }
         }
     }

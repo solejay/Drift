@@ -65,8 +65,8 @@ struct DriftApp: App {
                 }
             }
             .task {
-                await appState.initialize()
                 checkBiometricLock()
+                await appState.initialize()
             }
             .preferredColorScheme(preferredScheme)
         }

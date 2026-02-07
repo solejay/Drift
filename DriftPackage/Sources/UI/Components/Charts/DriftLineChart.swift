@@ -85,18 +85,15 @@ public struct DriftLineChart: View {
                 Rectangle()
                     .fill(Color.clear)
                     .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(minimumDistance: 0)
-                            .onEnded { value in
-                                guard let onTap = onTap else { return }
-                                let xPosition = value.location.x
-                                if let date: Date = proxy.value(atX: xPosition) {
-                                    if let index = findNearestIndex(for: date) {
-                                        onTap(index)
-                                    }
-                                }
+                    .onTapGesture { location in
+                        guard let onTap = onTap else { return }
+                        let xPosition = location.x
+                        if let date: Date = proxy.value(atX: xPosition) {
+                            if let index = findNearestIndex(for: date) {
+                                onTap(index)
                             }
-                    )
+                        }
+                    }
             }
         }
         .onAppear {

@@ -90,8 +90,8 @@ extension Account {
             officialName: officialName,
             type: type,
             mask: mask,
-            currentBalance: currentBalance,
-            availableBalance: availableBalance,
+            currentBalance: currentBalance.map { Decimal($0) },
+            availableBalance: availableBalance.map { Decimal($0) },
             institutionName: nil, // Would need to join with PlaidItem
             isHidden: isHidden
         )
@@ -105,8 +105,8 @@ struct AccountDTO: Content {
     let officialName: String?
     let type: String
     let mask: String?
-    let currentBalance: Double?
-    let availableBalance: Double?
+    let currentBalance: Decimal?
+    let availableBalance: Decimal?
     let institutionName: String?
     let isHidden: Bool
 }

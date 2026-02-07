@@ -34,6 +34,15 @@ func routes(_ app: Application) throws {
     // Protected routes
     let protected = api.grouped(JWTAuthMiddleware())
 
+    // User profile
+    protected.grouped("user").get("profile") { req async throws -> UserDTO in
+        let userId = try req.userId
+        guard let user = try await User.find(userId, on: req.db) else {
+            throw Abort(.notFound, reason: "User not found")
+        }
+        return user.toDTO()
+    }
+
     // Plaid routes
     try protected.register(collection: PlaidController())
 

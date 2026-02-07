@@ -7,5 +7,7 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Drift uses Face ID to securely unlock the app and protect your financial data.</string>
 </dict>
 </plist>

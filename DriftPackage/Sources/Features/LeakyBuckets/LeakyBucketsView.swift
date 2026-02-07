@@ -222,11 +222,13 @@ private struct LeakyHeaderView: View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
             MirrorTag(text: "Leaky buckets")
 
-            Text("Hidden leaks")
+            Text(bucketCount > 0 ? "Hidden leaks" : "Leaky Buckets")
                 .font(.system(size: 30, weight: .semibold, design: .serif))
                 .foregroundStyle(DriftPalette.ink)
 
-            Text("Small patterns that quietly add up over time.")
+            Text(bucketCount > 0
+                 ? "Small patterns that quietly add up over time."
+                 : "We'll look for recurring patterns in your spending.")
                 .font(.system(size: 15, weight: .regular, design: .rounded))
                 .foregroundStyle(DriftPalette.muted)
         }

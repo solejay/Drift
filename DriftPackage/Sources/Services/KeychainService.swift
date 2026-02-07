@@ -15,6 +15,7 @@ public actor KeychainService {
         case accessToken = "access_token"
         case refreshToken = "refresh_token"
         case deviceId = "device_id"
+        case userProfile = "user_profile"
     }
 
     // MARK: - Public Interface
@@ -31,6 +32,16 @@ public actor KeychainService {
         return String(data: data, encoding: .utf8)
     }
 
+    /// Save raw data to the keychain
+    public func saveData(_ data: Data, for key: Key) throws {
+        try save(data, for: key.rawValue)
+    }
+
+    /// Retrieve raw data from the keychain
+    public func getData(_ key: Key) throws -> Data? {
+        try getData(key.rawValue)
+    }
+
     /// Delete a value from the keychain
     public func delete(_ key: Key) throws {
         try delete(key.rawValue)
@@ -38,7 +49,7 @@ public actor KeychainService {
 
     /// Delete all stored values
     public func deleteAll() throws {
-        for key in [Key.accessToken, Key.refreshToken, Key.deviceId] {
+        for key in [Key.accessToken, Key.refreshToken, Key.deviceId, Key.userProfile] {
             try? delete(key)
         }
     }

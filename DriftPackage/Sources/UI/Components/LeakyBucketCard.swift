@@ -7,8 +7,6 @@ public struct LeakyBucketCard: View {
     private let bucket: LeakyBucket
     private let onTap: (() -> Void)?
 
-    @State private var isPressed = false
-
     public init(bucket: LeakyBucket, onTap: (() -> Void)? = nil) {
         self.bucket = bucket
         self.onTap = onTap
@@ -17,18 +15,12 @@ public struct LeakyBucketCard: View {
     public var body: some View {
         Group {
             if let onTap {
-                cardContent
-                    .scaleEffect(isPressed ? 0.98 : 1.0)
-                    .shadow(isPressed ? DesignTokens.Shadow.small : DesignTokens.Shadow.small)
-                    .animation(DesignTokens.Animation.spring, value: isPressed)
-                    .simultaneousGesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { _ in isPressed = true }
-                            .onEnded { _ in
-                                isPressed = false
-                                onTap()
-                            }
-                    )
+                Button {
+                    onTap()
+                } label: {
+                    cardContent
+                }
+                .buttonStyle(LeakyBucketButtonStyle())
             } else {
                 cardContent
             }
@@ -93,6 +85,16 @@ public struct LeakyBucketCard: View {
         .background(Color(.systemBackground).opacity(0.9))
         .clipShape(RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.card))
         .shadow(DesignTokens.Shadow.small)
+    }
+}
+
+// MARK: - Button Style
+
+private struct LeakyBucketButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .animation(DesignTokens.Animation.spring, value: configuration.isPressed)
     }
 }
 

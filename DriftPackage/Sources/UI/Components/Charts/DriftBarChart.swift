@@ -66,18 +66,15 @@ public struct DriftBarChart: View {
                 Rectangle()
                     .fill(Color.clear)
                     .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(minimumDistance: 0)
-                            .onEnded { value in
-                                guard let onSelect = onSelect else { return }
-                                let xPosition = value.location.x
-                                if let label: String = proxy.value(atX: xPosition) {
-                                    if let index = dataPoints.firstIndex(where: { $0.label == label }) {
-                                        onSelect(index)
-                                    }
-                                }
+                    .onTapGesture { location in
+                        guard let onSelect = onSelect else { return }
+                        let xPosition = location.x
+                        if let label: String = proxy.value(atX: xPosition) {
+                            if let index = dataPoints.firstIndex(where: { $0.label == label }) {
+                                onSelect(index)
                             }
-                    )
+                        }
+                    }
             }
         }
         .onAppear {

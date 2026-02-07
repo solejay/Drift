@@ -15,7 +15,7 @@ public final class AppState: ObservableObject {
     @Published public var isAuthenticated = AppConfiguration.useMockData && !AppConfiguration.showOnboardingInMockMode
     @Published public var hasCompletedOnboarding = AppConfiguration.useMockData && !AppConfiguration.showOnboardingInMockMode
     @Published public var hasLinkedAccounts = AppConfiguration.useMockData
-    @Published public var isLoading = false
+    @Published public var isLoading = !AppConfiguration.useMockData
 
     // MARK: - Services
     public let authService: AuthService
@@ -42,12 +42,12 @@ public final class AppState: ObservableObject {
         isLoading = true
         defer { isLoading = false }
 
-        // Check onboarding status
-        hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
-
         // Restore authentication session
         await authService.restoreSession()
         isAuthenticated = authService.isAuthenticated
+
+        // Check onboarding status — authenticated users have already onboarded
+        hasCompletedOnboarding = isAuthenticated || UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
 
         // Load linked accounts if authenticated
         if isAuthenticated {

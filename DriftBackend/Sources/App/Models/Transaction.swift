@@ -80,7 +80,7 @@ extension Transaction {
             id: id!,
             accountId: $account.id,
             plaidTransactionId: plaidTransactionId,
-            amount: amount,
+            amount: Decimal(amount),
             date: date,
             merchantName: merchantName,
             category: category,
@@ -95,7 +95,7 @@ struct TransactionDTO: Content {
     let id: UUID
     let accountId: UUID
     let plaidTransactionId: String?
-    let amount: Double
+    let amount: Decimal
     let date: Date
     let merchantName: String
     let category: String

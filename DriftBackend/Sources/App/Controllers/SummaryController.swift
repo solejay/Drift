@@ -13,8 +13,8 @@ struct SummaryController: RouteCollection {
 
     struct DailySummaryResponse: Content {
         let date: Date
-        let totalSpent: Double
-        let totalIncome: Double
+        let totalSpent: Decimal
+        let totalIncome: Decimal
         let transactionCount: Int
         let categoryBreakdown: [CategoryBreakdownDTO]
         let topTransactions: [TransactionDTO]
@@ -24,7 +24,7 @@ struct SummaryController: RouteCollection {
     struct CategoryBreakdownDTO: Content {
         let id: UUID
         let category: String
-        let amount: Double
+        let amount: Decimal
         let transactionCount: Int
         let percentageOfTotal: Double
     }
@@ -50,8 +50,8 @@ struct SummaryController: RouteCollection {
         let expenses = transactions.filter { $0.amount > 0 }
         let income = transactions.filter { $0.amount < 0 }
 
-        let totalSpent = expenses.map(\.amount).reduce(0, +)
-        let totalIncome = income.map(\.amount).reduce(0, +).magnitude
+        let totalSpentDouble = expenses.map(\.amount).reduce(0, +)
+        let totalIncomeDouble = income.map(\.amount).reduce(0, +).magnitude
 
         // Category breakdown
         let grouped = Dictionary(grouping: expenses, by: \.category)
@@ -60,9 +60,9 @@ struct SummaryController: RouteCollection {
             return CategoryBreakdownDTO(
                 id: UUID(),
                 category: category,
-                amount: amount,
+                amount: Decimal(amount),
                 transactionCount: txns.count,
-                percentageOfTotal: totalSpent > 0 ? amount / totalSpent : 0
+                percentageOfTotal: totalSpentDouble > 0 ? amount / totalSpentDouble : 0
             )
         }.sorted { $0.amount > $1.amount }
 
@@ -86,13 +86,13 @@ struct SummaryController: RouteCollection {
 
         var comparison: Double? = nil
         if yesterdaySpent > 0 {
-            comparison = (totalSpent - yesterdaySpent) / yesterdaySpent
+            comparison = (totalSpentDouble - yesterdaySpent) / yesterdaySpent
         }
 
         return DailySummaryResponse(
             date: startOfDay,
-            totalSpent: totalSpent,
-            totalIncome: totalIncome,
+            totalSpent: Decimal(totalSpentDouble),
+            totalIncome: Decimal(totalIncomeDouble),
             transactionCount: transactions.count,
             categoryBreakdown: categoryBreakdown,
             topTransactions: Array(topTransactions),
@@ -105,8 +105,8 @@ struct SummaryController: RouteCollection {
     struct WeeklySummaryResponse: Content {
         let weekStartDate: Date
         let weekEndDate: Date
-        let totalSpent: Double
-        let totalIncome: Double
+        let totalSpent: Decimal
+        let totalIncome: Decimal
         let transactionCount: Int
         let categoryBreakdown: [CategoryBreakdownDTO]
         let dailySpending: [DailySpendingDTO]
@@ -117,14 +117,14 @@ struct SummaryController: RouteCollection {
     struct DailySpendingDTO: Content {
         let id: UUID
         let date: Date
-        let amount: Double
+        let amount: Decimal
         let transactionCount: Int
     }
 
     struct MerchantBreakdownDTO: Content {
         let id: UUID
         let merchantName: String
-        let amount: Double
+        let amount: Decimal
         let transactionCount: Int
         let category: String
     }
@@ -149,8 +149,8 @@ struct SummaryController: RouteCollection {
         let expenses = transactions.filter { $0.amount > 0 }
         let income = transactions.filter { $0.amount < 0 }
 
-        let totalSpent = expenses.map(\.amount).reduce(0, +)
-        let totalIncome = income.map(\.amount).reduce(0, +).magnitude
+        let totalSpentDouble = expenses.map(\.amount).reduce(0, +)
+        let totalIncomeDouble = income.map(\.amount).reduce(0, +).magnitude
 
         // Category breakdown
         let grouped = Dictionary(grouping: expenses, by: \.category)
@@ -159,9 +159,9 @@ struct SummaryController: RouteCollection {
             return CategoryBreakdownDTO(
                 id: UUID(),
                 category: category,
-                amount: amount,
+                amount: Decimal(amount),
                 transactionCount: txns.count,
-                percentageOfTotal: totalSpent > 0 ? amount / totalSpent : 0
+                percentageOfTotal: totalSpentDouble > 0 ? amount / totalSpentDouble : 0
             )
         }.sorted { $0.amount > $1.amount }
 
@@ -175,7 +175,7 @@ struct SummaryController: RouteCollection {
             dailySpending.append(DailySpendingDTO(
                 id: UUID(),
                 date: dayStart,
-                amount: dayExpenses.map(\.amount).reduce(0, +),
+                amount: Decimal(dayExpenses.map(\.amount).reduce(0, +)),
                 transactionCount: dayExpenses.count
             ))
         }
@@ -186,7 +186,7 @@ struct SummaryController: RouteCollection {
             MerchantBreakdownDTO(
                 id: UUID(),
                 merchantName: merchant,
-                amount: txns.map(\.amount).reduce(0, +),
+                amount: Decimal(txns.map(\.amount).reduce(0, +)),
                 transactionCount: txns.count,
                 category: txns.first?.category ?? "other"
             )
@@ -208,14 +208,14 @@ struct SummaryController: RouteCollection {
 
         var comparison: Double? = nil
         if lastWeekSpent > 0 {
-            comparison = (totalSpent - lastWeekSpent) / lastWeekSpent
+            comparison = (totalSpentDouble - lastWeekSpent) / lastWeekSpent
         }
 
         return WeeklySummaryResponse(
             weekStartDate: weekStart,
             weekEndDate: calendar.date(byAdding: .day, value: -1, to: weekEnd)!,
-            totalSpent: totalSpent,
-            totalIncome: totalIncome,
+            totalSpent: Decimal(totalSpentDouble),
+            totalIncome: Decimal(totalIncomeDouble),
             transactionCount: transactions.count,
             categoryBreakdown: categoryBreakdown,
             dailySpending: dailySpending,
@@ -229,8 +229,8 @@ struct SummaryController: RouteCollection {
     struct MonthlySummaryResponse: Content {
         let month: Int
         let year: Int
-        let totalSpent: Double
-        let totalIncome: Double
+        let totalSpent: Decimal
+        let totalIncome: Decimal
         let transactionCount: Int
         let categoryBreakdown: [CategoryBreakdownDTO]
         let weeklySpending: [WeeklySpendingDTO]
@@ -244,7 +244,7 @@ struct SummaryController: RouteCollection {
         let weekNumber: Int
         let startDate: Date
         let endDate: Date
-        let amount: Double
+        let amount: Decimal
         let transactionCount: Int
     }
 
@@ -275,8 +275,8 @@ struct SummaryController: RouteCollection {
         let expenses = transactions.filter { $0.amount > 0 }
         let income = transactions.filter { $0.amount < 0 }
 
-        let totalSpent = expenses.map(\.amount).reduce(0, +)
-        let totalIncome = income.map(\.amount).reduce(0, +).magnitude
+        let totalSpentDouble = expenses.map(\.amount).reduce(0, +)
+        let totalIncomeDouble = income.map(\.amount).reduce(0, +).magnitude
 
         // Category breakdown
         let grouped = Dictionary(grouping: expenses, by: \.category)
@@ -285,9 +285,9 @@ struct SummaryController: RouteCollection {
             return CategoryBreakdownDTO(
                 id: UUID(),
                 category: category,
-                amount: amount,
+                amount: Decimal(amount),
                 transactionCount: txns.count,
-                percentageOfTotal: totalSpent > 0 ? amount / totalSpent : 0
+                percentageOfTotal: totalSpentDouble > 0 ? amount / totalSpentDouble : 0
             )
         }.sorted { $0.amount > $1.amount }
 
@@ -302,7 +302,7 @@ struct SummaryController: RouteCollection {
             dailyHeatmap.append(DailySpendingDTO(
                 id: UUID(),
                 date: dayStart,
-                amount: dayExpenses.map(\.amount).reduce(0, +),
+                amount: Decimal(dayExpenses.map(\.amount).reduce(0, +)),
                 transactionCount: dayExpenses.count
             ))
         }
@@ -321,7 +321,7 @@ struct SummaryController: RouteCollection {
                 weekNumber: weekNum,
                 startDate: weekStart,
                 endDate: calendar.date(byAdding: .day, value: -1, to: weekEnd)!,
-                amount: weekExpenses.map(\.amount).reduce(0, +),
+                amount: Decimal(weekExpenses.map(\.amount).reduce(0, +)),
                 transactionCount: weekExpenses.count
             ))
 
@@ -335,7 +335,7 @@ struct SummaryController: RouteCollection {
             MerchantBreakdownDTO(
                 id: UUID(),
                 merchantName: merchant,
-                amount: txns.map(\.amount).reduce(0, +),
+                amount: Decimal(txns.map(\.amount).reduce(0, +)),
                 transactionCount: txns.count,
                 category: txns.first?.category ?? "other"
             )
@@ -357,14 +357,14 @@ struct SummaryController: RouteCollection {
 
         var comparison: Double? = nil
         if lastMonthSpent > 0 {
-            comparison = (totalSpent - lastMonthSpent) / lastMonthSpent
+            comparison = (totalSpentDouble - lastMonthSpent) / lastMonthSpent
         }
 
         return MonthlySummaryResponse(
             month: month,
             year: year,
-            totalSpent: totalSpent,
-            totalIncome: totalIncome,
+            totalSpent: Decimal(totalSpentDouble),
+            totalIncome: Decimal(totalIncomeDouble),
             transactionCount: transactions.count,
             categoryBreakdown: categoryBreakdown,
             weeklySpending: weeklySpending,

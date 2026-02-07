@@ -36,12 +36,34 @@ public final class AuthService: ObservableObject {
 
             await api.setTokens(access: accessToken, refresh: refreshToken)
 
-            // Validate token by fetching user profile
-            // For now, just mark as authenticated
+            // Restore cached user profile
+            if let userData = try await keychain.getData(.userProfile) {
+                let decoder = JSONDecoder()
+                decoder.dateDecodingStrategy = .iso8601
+                decoder.keyDecodingStrategy = .convertFromSnakeCase
+                currentUser = try? decoder.decode(UserDTO.self, from: userData)
+            }
+
             isAuthenticated = true
+
+            // If cached user is missing, fetch from API
+            if currentUser == nil {
+                await fetchUserProfile()
+            }
         } catch {
             // Tokens invalid or missing
             await clearSession()
+        }
+    }
+
+    /// Fetch user profile from the API and cache it
+    public func fetchUserProfile() async {
+        do {
+            let user: UserDTO = try await api.get("/api/v1/user/profile")
+            currentUser = user
+            await persistUser(user)
+        } catch {
+            // Profile fetch failed; non-fatal, user data just won't display
         }
     }
 
@@ -73,6 +95,7 @@ public final class AuthService: ObservableObject {
         await api.setTokens(access: response.accessToken, refresh: response.refreshToken)
 
         currentUser = response.user
+        await persistUser(response.user)
         isAuthenticated = true
     }
 
@@ -99,6 +122,7 @@ public final class AuthService: ObservableObject {
         await api.setTokens(access: response.accessToken, refresh: response.refreshToken)
 
         currentUser = response.user
+        await persistUser(response.user)
         isAuthenticated = true
     }
 
@@ -138,6 +162,15 @@ public final class AuthService: ObservableObject {
     }
 
     // MARK: - Private Helpers
+
+    private func persistUser(_ user: UserDTO) async {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        if let data = try? encoder.encode(user) {
+            try? await keychain.saveData(data, for: .userProfile)
+        }
+    }
 
     private func clearSession() async {
         try? await keychain.deleteAll()

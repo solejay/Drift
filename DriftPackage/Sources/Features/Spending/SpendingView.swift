@@ -34,11 +34,12 @@ public struct SpendingView: View {
                         }
                     }
 
-                    if viewModel.spendingData == nil && !viewModel.isLoading && viewModel.error == nil {
+                    if !viewModel.isLoading && viewModel.error == nil &&
+                        (viewModel.spendingData == nil || viewModel.spendingData?.transactionCount == 0) {
                         SpendingEmptyState(period: viewModel.selectedPeriod)
                     }
 
-                    if let data = viewModel.spendingData {
+                    if let data = viewModel.spendingData, data.transactionCount > 0 {
                         SpendingHeroCard(
                             period: viewModel.selectedPeriod,
                             totalSpent: viewModel.formattedTotal,
@@ -47,49 +48,49 @@ public struct SpendingView: View {
                             transactionCount: data.transactionCount
                         )
                         .staggeredAppear(index: 2)
-                    }
 
-                    if let insight = viewModel.insightText {
-                        SpendingInsightCard(
-                            insightText: insight,
-                            isPositive: !viewModel.comparisonArrowUp
-                        )
-                        .staggeredAppear(index: 3)
-                    }
+                        if let insight = viewModel.insightText {
+                            SpendingInsightCard(
+                                insightText: insight,
+                                isPositive: !viewModel.comparisonArrowUp
+                            )
+                            .staggeredAppear(index: 3)
+                        }
 
-                    if let data = viewModel.spendingData, !data.chartData.isEmpty {
-                        SpendingChart(
-                            period: viewModel.selectedPeriod,
-                            chartData: data.chartData,
-                            selectedIndex: viewModel.selectedChartIndex,
-                            onSelect: { index in
-                                withAnimation(DesignTokens.Animation.spring) {
-                                    if viewModel.selectedChartIndex == index {
-                                        viewModel.selectedChartIndex = nil
-                                    } else {
-                                        viewModel.selectedChartIndex = index
+                        if !data.chartData.isEmpty {
+                            SpendingChart(
+                                period: viewModel.selectedPeriod,
+                                chartData: data.chartData,
+                                selectedIndex: viewModel.selectedChartIndex,
+                                onSelect: { index in
+                                    withAnimation(DesignTokens.Animation.spring) {
+                                        if viewModel.selectedChartIndex == index {
+                                            viewModel.selectedChartIndex = nil
+                                        } else {
+                                            viewModel.selectedChartIndex = index
+                                        }
                                     }
                                 }
-                            }
-                        )
-                        .staggeredAppear(index: 4)
-                    }
+                            )
+                            .staggeredAppear(index: 4)
+                        }
 
-                    if let data = viewModel.spendingData, !data.categoryBreakdown.isEmpty {
-                        CategoryBreakdownSection(
-                            categories: data.categoryBreakdown,
-                            maxItems: viewModel.selectedPeriod == .month ? 6 : 5
-                        )
-                        .staggeredAppear(index: 5)
-                    }
+                        if !data.categoryBreakdown.isEmpty {
+                            CategoryBreakdownSection(
+                                categories: data.categoryBreakdown,
+                                maxItems: viewModel.selectedPeriod == .month ? 6 : 5
+                            )
+                            .staggeredAppear(index: 5)
+                        }
 
-                    if let data = viewModel.spendingData, !data.topItems.isEmpty {
-                        TopItemsSection(
-                            period: viewModel.selectedPeriod,
-                            items: data.topItems,
-                            maxItems: 5
-                        )
-                        .staggeredAppear(index: 6)
+                        if !data.topItems.isEmpty {
+                            TopItemsSection(
+                                period: viewModel.selectedPeriod,
+                                items: data.topItems,
+                                maxItems: 5
+                            )
+                            .staggeredAppear(index: 6)
+                        }
                     }
 
                     Spacer()
@@ -234,28 +235,60 @@ private struct MirrorTag: View {
 private struct SpendingEmptyState: View {
     let period: SpendingPeriod
 
+    private var iconName: String {
+        switch period {
+        case .day: return "sun.and.horizon"
+        case .week: return "leaf"
+        case .month: return "calendar"
+        }
+    }
+
+    private var title: String {
+        switch period {
+        case .day: return "A quiet day"
+        case .week: return "A still week"
+        case .month: return "Nothing yet"
+        }
+    }
+
     private var message: String {
         switch period {
         case .day:
-            return "No spending in your tracked categories today. We'll let you know when something comes through."
+            return "No spending recorded today.\nTransactions will appear here as they come through."
         case .week:
-            return "Your weekly summary is building. Check back Sunday!"
+            return "Your weekly summary is still building.\nCheck back as the week unfolds."
         case .month:
-            return "Nothing here this month yet. Your monthly mirror will fill in as transactions arrive."
+            return "No transactions this month yet.\nYour monthly mirror will fill in as spending arrives."
         }
     }
 
     var body: some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                Text("All quiet")
-                    .font(.system(size: 18, weight: .semibold, design: .serif))
-                    .foregroundStyle(DriftPalette.ink)
+            VStack(spacing: DesignTokens.Spacing.lg) {
+                Image(systemName: iconName)
+                    .font(.system(size: 36, weight: .light))
+                    .foregroundStyle(DriftPalette.accent.opacity(0.6))
+                    .padding(.top, DesignTokens.Spacing.sm)
 
-                Text(message)
-                    .font(.system(size: 14, weight: .regular, design: .rounded))
-                    .foregroundStyle(DriftPalette.muted)
+                VStack(spacing: DesignTokens.Spacing.sm) {
+                    Text(title)
+                        .font(.system(size: 20, weight: .semibold, design: .serif))
+                        .foregroundStyle(DriftPalette.ink)
+
+                    Text(message)
+                        .font(.system(size: 14, weight: .regular, design: .rounded))
+                        .foregroundStyle(DriftPalette.muted)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(3)
+                }
+
+                Text("Pull down to refresh")
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(DriftPalette.muted.opacity(0.6))
+                    .padding(.bottom, DesignTokens.Spacing.xs)
             }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, DesignTokens.Spacing.lg)
         }
         .accessibilityElement(children: .combine)
     }
