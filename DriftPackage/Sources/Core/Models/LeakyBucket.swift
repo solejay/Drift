@@ -46,6 +46,7 @@ public struct LeakyBucket: Identifiable, Codable, Sendable, Hashable {
     public let firstOccurrence: Date?
     public let lastOccurrence: Date?
     public let logoUrl: String?
+    public let aiClassification: LeakClassificationInfo?
 
     public init(
         id: UUID = UUID(),
@@ -58,7 +59,8 @@ public struct LeakyBucket: Identifiable, Codable, Sendable, Hashable {
         occurrenceCount: Int,
         firstOccurrence: Date? = nil,
         lastOccurrence: Date? = nil,
-        logoUrl: String? = nil
+        logoUrl: String? = nil,
+        aiClassification: LeakClassificationInfo? = nil
     ) {
         self.id = id
         self.merchantName = merchantName
@@ -72,6 +74,7 @@ public struct LeakyBucket: Identifiable, Codable, Sendable, Hashable {
         self.firstOccurrence = firstOccurrence
         self.lastOccurrence = lastOccurrence
         self.logoUrl = logoUrl
+        self.aiClassification = aiClassification
     }
 
     /// Formatted monthly impact

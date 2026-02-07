@@ -68,6 +68,47 @@ public actor LeakyBucketDetector {
         return buckets.sorted { $0.monthlyImpact > $1.monthlyImpact }
     }
 
+    /// Detect leaky buckets using pre-computed AI merchant groupings
+    public func detect(from transactions: [TransactionDTO], merchantGroups: [String: [String]]) async -> [LeakyBucket] {
+        if AppConfiguration.useMockData {
+            return Self.mockLeakyBuckets()
+        }
+
+        guard !transactions.isEmpty else { return [] }
+
+        let expenses = transactions.filter { $0.amount > 0 && !$0.isExcluded && !$0.isPending }
+
+        // Build a reverse lookup: raw merchant name → canonical name
+        var rawToCanonical: [String: String] = [:]
+        for (canonical, rawNames) in merchantGroups {
+            for raw in rawNames {
+                rawToCanonical[raw.lowercased()] = canonical
+            }
+        }
+
+        // Group by AI-assigned canonical name, falling back to regex normalization
+        let grouped = Dictionary(grouping: expenses) { transaction -> String in
+            if let canonical = rawToCanonical[transaction.merchantName.lowercased()] {
+                return canonical
+            }
+            return normalizeMerchant(transaction.merchantName)
+        }
+
+        let candidates = grouped.filter { _, txns in
+            txns.count >= config.minimumOccurrences &&
+            averageAmount(txns) <= config.maxAmountForMicroSpend
+        }
+
+        var buckets: [LeakyBucket] = []
+        for (merchant, transactions) in candidates {
+            if let pattern = analyzePattern(merchant: merchant, transactions: transactions) {
+                buckets.append(pattern)
+            }
+        }
+
+        return buckets.sorted { $0.monthlyImpact > $1.monthlyImpact }
+    }
+
     // MARK: - Pattern Analysis
 
     private func analyzePattern(merchant: String, transactions: [TransactionDTO]) -> LeakyBucket? {
@@ -119,7 +160,7 @@ public actor LeakyBucketDetector {
 
     // MARK: - Helpers
 
-    private func normalizeMerchant(_ name: String) -> String {
+    public func normalizeMerchant(_ name: String) -> String {
         // Remove common suffixes, numbers, locations
         var normalized = name.lowercased()
 

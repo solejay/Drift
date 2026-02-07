@@ -92,7 +92,7 @@ public struct LeakyBucketsView: View {
             }
         }
         .sheet(item: $selectedBucket) { bucket in
-            BucketDetailSheet(bucket: bucket)
+            BucketDetailSheet(bucket: bucket, viewModel: viewModel)
         }
         .sheet(isPresented: $showDateRangePicker) {
             DateRangePickerSheet(selectedFilter: $viewModel.selectedFilter)
@@ -140,15 +140,30 @@ public struct LeakyBucketsView: View {
     // MARK: - Loading View
 
     private var loadingView: some View {
-        VStack(spacing: DesignTokens.Spacing.md) {
-            LeakySummaryShimmer()
-            BucketListShimmer()
+        ZStack {
+            DriftBackground(animated: false)
 
-            Text("Analyzing your spending patterns...")
-                .font(.system(size: 15, weight: .regular, design: .rounded))
-                .foregroundStyle(DriftPalette.muted)
+            VStack(spacing: DesignTokens.Spacing.md) {
+                LeakySummaryShimmer()
+                BucketListShimmer()
+
+                if let stage = viewModel.aiStage {
+                    Text(stage.displayText)
+                        .font(.system(size: 15, weight: .regular, design: .rounded))
+                        .foregroundStyle(DriftPalette.muted)
+                        .contentTransition(.opacity)
+                        .animation(DesignTokens.Animation.spring, value: stage)
+                } else {
+                    Text("Analyzing your spending patterns...")
+                        .font(.system(size: 15, weight: .regular, design: .rounded))
+                        .foregroundStyle(DriftPalette.muted)
+                }
+
+                Spacer()
+            }
+            .padding(.horizontal)
+            .padding(.top, DesignTokens.Spacing.lg)
         }
-        .padding(.horizontal)
     }
 
     // MARK: - Summary
@@ -199,6 +214,7 @@ public struct LeakyBucketsView: View {
                     .buttonStyle(.plain)
                     .accessibilityHint("Re-runs the leaky bucket analysis")
                 }
+
             }
         }
         .accessibilityElement(children: .combine)
@@ -254,6 +270,7 @@ private struct LeakyHeaderView: View {
 
 private struct BucketDetailSheet: View {
     let bucket: LeakyBucket
+    let viewModel: LeakyBucketsViewModel
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -313,24 +330,17 @@ private struct BucketDetailSheet: View {
                                 }
 
                                 StatRow(title: "Confidence", value: bucket.confidencePercentage)
-                            }
-                        }
 
-                        GlassCard {
-                            VStack(alignment: .leading, spacing: DesignTokens.Spacing.sm) {
-                                HStack {
-                                    Image(systemName: "lightbulb")
-                                        .foregroundStyle(DriftPalette.sunset)
-                                    Text("Insight")
-                                        .font(.system(size: 16, weight: .semibold, design: .serif))
-                                        .foregroundStyle(DriftPalette.ink)
+                                if let classification = bucket.aiClassification {
+                                    StatRow(title: "AI assessment", value: classification.reasoning)
                                 }
-
-                                Text(generateInsight())
-                                    .font(.system(size: 15, weight: .regular, design: .rounded))
-                                    .foregroundStyle(DriftPalette.muted)
                             }
                         }
+
+                        BucketInsightView(
+                            bucket: bucket,
+                            insightStream: viewModel.insightStream(for: bucket)
+                        )
                     }
                     .padding()
                 }
@@ -349,24 +359,6 @@ private struct BucketDetailSheet: View {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         return formatter.string(from: date)
-    }
-
-    private func generateInsight() -> String {
-        let yearly = bucket.formattedYearlyImpact
-
-        switch bucket.category {
-        case .food:
-            return "Your \(bucket.merchantName.lowercased()) habit adds up to \(yearly) per year. That's equivalent to a nice dinner out every week."
-
-        case .subscriptions:
-            return "This subscription costs \(yearly) annually. Are you getting value from it?"
-
-        case .entertainment:
-            return "Entertainment at \(bucket.merchantName) totals \(yearly) yearly. Consider if this aligns with your priorities."
-
-        default:
-            return "These recurring purchases at \(bucket.merchantName) total \(yearly) per year. Small amounts add up."
-        }
     }
 }
 
